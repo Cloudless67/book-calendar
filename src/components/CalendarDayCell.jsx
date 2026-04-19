@@ -10,7 +10,8 @@ const CalendarDayCell = ({
   isDragStartOrEnd,
   onMouseDown,
   onMouseEnter,
-  onOpenModal
+  onOpenModal,
+  isBottomRow
 }) => {
   const [showPicker, setShowPicker] = useState(false);
   const pickerRef = useRef(null);
@@ -38,6 +39,20 @@ const CalendarDayCell = ({
 
   const mainReading = todaysReadings[0];
   const extraCount = todaysReadings.length - 1;
+
+  // 팝오버가 화면 밖으로 나가지 않도록 요일에 따라 정렬 위치 조정
+  const dayOfWeek = day.day();
+  let popupAlignClass = "left-1/2 -translate-x-1/2";
+  if (dayOfWeek === 0 || dayOfWeek === 1) { // 일, 월
+    popupAlignClass = "left-0";
+  } else if (dayOfWeek === 5 || dayOfWeek === 6) { // 금, 토
+    popupAlignClass = "right-0";
+  }
+
+  // 달력 하단(마지막 2줄)에서는 팝오버가 위로 뜨도록 설정
+  const popupVerticalClass = isBottomRow 
+    ? "bottom-full mb-2 slide-in-from-bottom-2" 
+    : "top-full mt-2 slide-in-from-top-2";
 
   return (
     <div 
@@ -111,7 +126,7 @@ const CalendarDayCell = ({
               
               {/* Tooltip for single item */}
               {extraCount === 0 && (
-                <div className="absolute opacity-0 group-hover/book:opacity-100 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 bg-slate-800 text-white text-xs rounded-xl p-3 pointer-events-none transition-opacity z-50 shadow-xl">
+                <div className={`absolute opacity-0 group-hover/book:opacity-100 bottom-full ${popupAlignClass} mb-2 w-48 bg-slate-800 text-white text-xs rounded-xl p-3 pointer-events-none transition-opacity z-50 shadow-xl`}>
                   <p className="font-semibold mb-1 line-clamp-1">{mainReading.bookTitle}</p>
                   <p className="text-slate-300">{mainReading.pagesRead}p 읽음 (총 {mainReading.totalPages}p)</p>
                 </div>
@@ -120,7 +135,7 @@ const CalendarDayCell = ({
 
             {/* Popover for multiple items */}
             {showPicker && (
-              <div ref={pickerRef} className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-[60] overflow-hidden flex flex-col animate-in fade-in slide-in-from-top-2 duration-200">
+              <div ref={pickerRef} className={`absolute ${popupVerticalClass} ${popupAlignClass} w-56 bg-white rounded-xl shadow-2xl border border-slate-200 z-[60] overflow-hidden flex flex-col animate-in fade-in duration-200`}>
                 <div className="bg-slate-50 px-3 py-2.5 border-b border-slate-100 flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-600">기록 수정할 책 선택</span>
                   <span className="text-[10px] font-medium bg-primary-100 text-primary-600 px-1.5 py-0.5 rounded-md">총 {todaysReadings.length}권</span>

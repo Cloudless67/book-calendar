@@ -82,11 +82,12 @@ const CalendarWidget = ({ onOpenModal }) => {
       </div>
 
       <div className="grid grid-cols-7 gap-0 lg:gap-3 flex-1">
-        {days.map((day) => {
+        {days.map((day, idx) => {
           const formattedDate = day.format(dateFormat);
           const todaysReadings = readings.filter(r => r.date === formattedDate);
           const isCurrentMonth = day.isSame(monthStart, 'month');
           const isToday = day.isSame(dayjs(), 'day');
+          const isBottomRow = idx >= days.length - 14; // 마지막 2줄 여부
           
           let isInDragRange = false;
           let isDragStartOrEnd = false;
@@ -113,6 +114,7 @@ const CalendarWidget = ({ onOpenModal }) => {
               onMouseDown={handleMouseDown}
               onMouseEnter={handleMouseEnter}
               onOpenModal={onOpenModal}
+              isBottomRow={isBottomRow}
             />
           );
         })}
