@@ -52,6 +52,7 @@ const CalendarDayCell = ({
         min-h-[80px] lg:min-h-[100px] border rounded-none lg:rounded-2xl p-1 lg:p-2 transition-all duration-300 relative group cursor-pointer flex flex-col
         ${isInDragRange ? (isDragStartOrEnd ? 'bg-primary-100 border-primary-300 ring-2 ring-primary-400 z-10' : 'bg-primary-50/70 border-primary-200 text-primary-900') : (!isCurrentMonth ? 'opacity-40 bg-slate-50/50 border-transparent' : 'bg-white border-slate-100 hover:border-primary-200 hover:shadow-md')}
         ${isToday && !isInDragRange ? 'ring-2 ring-primary-500 border-transparent z-10' : ''}
+        ${showPicker ? 'z-50' : 'hover:z-40'}
       `}
     >
       <div className="flex justify-between items-start mb-2 shrink-0">
@@ -60,11 +61,11 @@ const CalendarDayCell = ({
         `}>
           {day.format('D')}
         </span>
-        <div className="flex items-center gap-1 z-20">
+        <div className="flex items-center gap-1 relative z-10">
           {todaysReadings.length > 0 && (
             <button 
               onClick={(e) => { e.stopPropagation(); onOpenModal(day.toDate()); }}
-              className="opacity-0 lg:group-hover:opacity-100 p-0.5 text-slate-400 hover:text-primary-500 transition-all bg-white hover:bg-primary-50 rounded-full"
+              className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 p-0.5 text-slate-400 hover:text-primary-500 transition-all bg-white/50 lg:bg-white hover:bg-primary-50 rounded-full"
               title="새로운 책 추가"
             >
               <Plus size={14} strokeWidth={3} />
@@ -73,13 +74,13 @@ const CalendarDayCell = ({
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center relative">
+      <div className="flex-1 flex flex-col items-center justify-center relative z-20">
         {todaysReadings.length > 0 ? (
           <>
             <div 
               onMouseDown={(e) => e.stopPropagation()}
               onClick={(e) => handleBookClick(e, mainReading)}
-              className="flex flex-col items-center animate-in fade-in zoom-in duration-300 relative group/book hover:scale-105 transition-transform cursor-pointer"
+              className="flex flex-col items-center animate-in fade-in zoom-in duration-300 relative group/book hover:scale-105 hover:z-50 transition-transform cursor-pointer"
               title={extraCount > 0 ? "여러 권 읽음 (클릭하여 선택)" : "기록 수정하기"}
             >
               <div className="w-8 lg:w-10 h-12 lg:h-14 rounded shadow-sm overflow-hidden border border-slate-200 relative">
@@ -148,8 +149,11 @@ const CalendarDayCell = ({
             )}
           </>
         ) : (
-          <div className="w-full h-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <Plus className="text-slate-300" size={24} />
+          <div 
+            onClick={(e) => { e.stopPropagation(); onOpenModal(day.toDate()); }}
+            className="w-full h-full flex flex-col items-center justify-center opacity-30 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+          >
+            <Plus className="text-slate-400" size={24} />
           </div>
         )}
       </div>
