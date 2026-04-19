@@ -285,22 +285,35 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     onClose();
   };
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      />
-      
-      {/* Modal Content */}
-      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-visible animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4 text-center">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
         
-        {/* Header */}
-        <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex flex-col gap-3 rounded-t-3xl">
-          <div className="flex items-center justify-between">
+        {/* Modal Content */}
+        <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-lg text-left overflow-visible animate-in fade-in zoom-in-95 duration-200 my-4 sm:my-8">
+          
+          {/* Header */}
+          <div className="bg-slate-50 px-6 py-5 border-b border-slate-100 flex flex-col gap-3 rounded-t-3xl">
+            <div className="flex items-center justify-between">
             <div>
               <h2 className="text-xl font-bold text-slate-800">{initialRecord ? '독서 기록 수정하기' : '독서 기록하기'}</h2>
               {initialRecord && (
@@ -589,6 +602,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
             >
               {initialRecord ? '수정 저장하기' : '기록 저장하기'}
             </button>
+          </div>
           </div>
         </div>
       </div>

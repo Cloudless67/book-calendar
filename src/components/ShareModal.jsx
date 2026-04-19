@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Download, Share2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import dayjs from 'dayjs';
@@ -6,6 +6,17 @@ import dayjs from 'dayjs';
 const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   const shareRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -62,15 +73,16 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      
-      {/* Modal Content */}
-      <div className="relative w-full max-w-[520px] bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[100] overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4 text-center">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+          onClick={onClose}
+        />
+        
+        {/* Modal Content */}
+        <div className="relative w-full max-w-[520px] bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl flex flex-col text-left my-4 sm:my-8">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200/50">
           <div>
@@ -86,7 +98,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         </div>
 
         {/* Share Preview Area */}
-        <div className="p-4 md:p-6 flex justify-center bg-slate-100/50 overflow-y-auto max-h-[60vh]">
+        <div className="p-4 md:p-6 flex justify-center bg-slate-100/50">
           {/* The actual element to be captured */}
           <div 
             ref={shareRef}
@@ -209,6 +221,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
               </>
             )}
           </button>
+        </div>
         </div>
       </div>
     </div>
