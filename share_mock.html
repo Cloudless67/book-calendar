@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookLog SNS Share Card</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans KR', sans-serif; }
+        
+        /* 인스타그램 피드 최적화 비율 (4:5) */
+        .share-card {
+            width: 100%;
+            max-width: 480px; /* 모바일 캡처용 폭 제한 */
+            aspect-ratio: 4 / 5;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 달력 칸 1:1 비율 */
+        .calendar-grid div {
+            aspect-ratio: 1 / 1;
+        }
+
+        /* 책 표지 타일 스타일 */
+        .book-cover-tile {
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px; /* rounded-xl */
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); /* 미세한 테두리 */
+        }
+        
+        /* 완독 스티커 감성 (프리미엄 느낌) */
+        .status-sticker {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 99px;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+            letter-spacing: -0.5px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-4">
+
+    <div class="share-card bg-white rounded-3xl shadow-2xl p-8 flex flex-col justify-between border border-gray-100">
+        
+        <header class="flex items-center justify-between mb-6">
+            <div class="flex items-center gap-1.5">
+                <span class="text-xl">📚</span>
+                <h1 class="text-xl font-black text-gray-950 tracking-tighter">Book<span class="text-blue-600">Log</span></h1>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold text-gray-950">2023년 10월</p>
+                <p class="text-xs text-gray-500 font-medium">나의 독서 여정</p>
+            </div>
+        </header>
+
+        <section class="flex-grow flex items-center justify-center">
+            <div class="calendar-grid grid grid-cols-7 gap-2.5 w-full">
+                
+                <script>
+                    for (let i = 0; i < 5; i++) {
+                        document.write(`<div class="bg-gray-50 rounded-xl border border-gray-100"></div>`);
+                    }
+                </script>
+
+                <div class="book-cover-tile relative" style="background-image: url('https://image.aladin.co.kr/product/31541/65/cover500/k282833139_1.jpg');">
+                    <span class="status-sticker absolute -top-2 -right-2">FINISH</span>
+                </div>
+
+                <div class="bg-gray-100 rounded-xl"></div>
+
+                <div class="book-cover-tile" style="background-image: url('https://image.aladin.co.kr/product/31541/65/cover500/k282833139_1.jpg'); opacity: 0.8;"></div>
+                <div class="book-cover-tile" style="background-image: url('https://image.aladin.co.kr/product/31541/65/cover500/k282833139_1.jpg'); opacity: 0.9;"></div>
+
+                <script>
+                    for (let i = 0; i < 11; i++) {
+                        document.write(`<div class="bg-gray-100 rounded-xl"></div>`);
+                    }
+                </script>
+
+                <div class="book-cover-tile" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+
+                <div class="book-cover-tile opacity-60" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+                <div class="book-cover-tile opacity-70" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+                <div class="book-cover-tile opacity-80" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+                <div class="book-cover-tile opacity-90" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+                <div class="book-cover-tile" style="background-image: url('https://image.aladin.co.kr/product/32044/21/cover500/k232834027_1.jpg');"></div>
+                
+                <div class="bg-white rounded-xl border-2 border-dashed border-blue-300 flex items-center justify-center">
+                    <span class="text-blue-500 text-xs font-bold">TODAY</span>
+                </div>
+
+                <script>
+                    for (let i = 0; i < 8; i++) {
+                        document.write(`<div class="bg-gray-100 rounded-xl"></div>`);
+                    }
+                </script>
+            </div>
+        </section>
+
+        <footer class="mt-8 pt-6 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+                <div class="flex gap-4 text-center">
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium">완독</p>
+                        <p class="text-xl font-extrabold text-gray-950">1<span class="text-sm text-gray-400">권</span></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium">총 페이지</p>
+                        <p class="text-xl font-extrabold text-gray-950">650<span class="text-sm text-gray-400">p</span></p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-400 font-medium">연속</p>
+                        <p class="text-xl font-extrabold text-blue-600">5<span class="text-sm text-blue-300">일</span></p>
+                    </div>
+                </div>
+                
+                <div class="text-right">
+                    <p class="text-[10px] text-gray-300">책 읽는 습관을 시각적으로 관리하세요.</p>
+                    <p class="text-xs font-bold text-gray-400 track-tighter">booklog.io</p>
+                </div>
+            </div>
+        </footer>
+
+    </div>
+
+</body>
+</html>
