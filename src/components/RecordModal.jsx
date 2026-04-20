@@ -4,7 +4,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
 import { useSetAtom } from 'jotai';
+import { useQuery } from '@tanstack/react-query';
 import { addReadingAtom, updateReadingAtom, deleteReadingAtom } from '../store';
+import { supabase } from '../lib/supabase';
 
 // 환경변수에서 API 키 로드
 const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID;
@@ -20,9 +22,10 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
   const [searchType, setSearchType] = useState('kwd'); // kwd, title, author, isbn
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
-  const [totalSearchResults, setTotalSearchResults] = useState(0);
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
+  const [selectedBook, setSelectedBook] = useState(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [isProcessingSelection, setIsProcessingSelection] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   
@@ -44,8 +47,6 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         setSearchType('kwd');
         setSearchQuery('');
         setSearchPage(1);
-        setTotalSearchResults(0);
-        setSearchResults([]);
         setSelectedBook({
           title: initialRecord.bookTitle,
           author: initialRecord.author,
@@ -64,8 +65,6 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         setSearchType('kwd');
         setSearchQuery('');
         setSearchPage(1);
-        setTotalSearchResults(0);
-        setSearchResults([]);
         setSelectedBook(null);
         setStartPage('');
         setEndPage('');
@@ -81,136 +80,180 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     }
   }, [isOpen, initialRecord]);
 
-  // Naver Book Search API
+  // Debounce search query
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
-    const delayDebounceFn = setTimeout(async () => {
-      if (searchQuery.trim().length > 1) {
-        setIsSearching(true);
-        setShowDropdown(true);
-        try {
-          if (NAVER_CLIENT_ID === "YOUR_NAVER_CLIENT_ID_HERE") {
-             console.warn("네이버 API 클라이언트 ID가 입력되지 않아 임시 Mock 데이터를 사용하거나 오류가 발생할 수 있습니다.");
-          }
-
-          // 파라미터 구성
-          const searchParams = new URLSearchParams({
-            display: 10,
-            start: ((searchPage - 1) * 10) + 1,
-            sort: 'sim'
-          });
-
-          let endpoint = '/naver-api/v1/search/book.json';
-          
-          if (searchType === 'kwd') {
-             searchParams.append('query', searchQuery);
-          } else {
-             // 고급 검색 (d_titl, d_auth, d_isbn)
-             endpoint = '/naver-api/v1/search/book_adv.json';
-             if (searchType === 'title') searchParams.append('d_titl', searchQuery);
-             if (searchType === 'author') searchParams.append('d_auth', searchQuery);
-             if (searchType === 'isbn') searchParams.append('d_isbn', searchQuery);
-          }
-          
-          const res = await fetch(`${endpoint}?${searchParams.toString()}`, {
-            headers: {
-              'X-Naver-Client-Id': NAVER_CLIENT_ID,
-              'X-Naver-Client-Secret': NAVER_CLIENT_SECRET
-            }
-          });
-          
-          if (!res.ok) {
-            throw new Error(`Naver API error: ${res.status}`);
-          }
-          
-          const jsonData = await res.json();
-          const totalCount = parseInt(jsonData.total || 0);
-          setTotalSearchResults(totalCount);
-
-          const items = jsonData.items || [];
-          const parsedResults = items.map((item, index) => {
-            const rawTitle = item.title || '제목 없음';
-            const rawAuthor = item.author || '작자 미상';
-            
-            // 네이버 API는 표지 이미지를 제공함!
-            const coverUrl = item.image || 'https://via.placeholder.com/128x192.png?text=No+Cover';
-            
-            return {
-              id: `naver-${index}-${Date.now()}`,
-              title: rawTitle.replace(/<[^>]*>?/gm, ''), // HTML 태그 제거
-              author: rawAuthor.replace(/<[^>]*>?/gm, ''),
-              coverUrl: coverUrl,
-              isbn: item.isbn || '', 
-              pageCount: 300 // 기본값, 이후 seoji API로 갱신
-            };
-          });
-
-          setSearchResults(parsedResults);
-        } catch (error) {
-          console.error("Naver Book search failed:", error);
-          setSearchResults([]);
-          if(NAVER_CLIENT_ID === "YOUR_NAVER_CLIENT_ID_HERE") {
-              alert("네이버 API 키가 없습니다. 코드 최상단의 클라이언트 ID/SECRET을 입력해주세요.");
-          }
-        } finally {
-          setIsSearching(false);
-        }
-      } else {
-        setSearchResults([]);
-        setShowDropdown(false);
-        setTotalSearchResults(0);
-      }
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
     }, 600);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery, searchPage, searchType]);
+  // Handle dropdown visibility
+  useEffect(() => {
+    if (debouncedQuery.trim().length > 1) {
+      setShowDropdown(true);
+    } else {
+      setShowDropdown(false);
+    }
+  }, [debouncedQuery]);
+
+  // React Query for Naver Book Search
+  const { data: queryData, isFetching: isSearching } = useQuery({
+    queryKey: ['naverSearch', searchType, debouncedQuery, searchPage],
+    queryFn: async () => {
+      if (debouncedQuery.trim().length < 2) return { items: [], total: 0 };
+      
+      const searchParams = new URLSearchParams({
+        display: 10,
+        start: ((searchPage - 1) * 10) + 1,
+        sort: 'sim'
+      });
+
+      let endpoint = '/naver-api/v1/search/book.json';
+      
+      if (searchType === 'kwd') {
+         searchParams.append('query', debouncedQuery);
+      } else {
+         endpoint = '/naver-api/v1/search/book_adv.json';
+         if (searchType === 'title') searchParams.append('d_titl', debouncedQuery);
+         if (searchType === 'author') searchParams.append('d_auth', debouncedQuery);
+         if (searchType === 'isbn') searchParams.append('d_isbn', debouncedQuery);
+      }
+      
+      const res = await fetch(`${endpoint}?${searchParams.toString()}`, {
+        headers: {
+          'X-Naver-Client-Id': NAVER_CLIENT_ID || '',
+          'X-Naver-Client-Secret': NAVER_CLIENT_SECRET || ''
+        }
+      });
+      
+      if (!res.ok) throw new Error(`Naver API error: ${res.status}`);
+      
+      const jsonData = await res.json();
+      const parsedResults = (jsonData.items || []).map((item, index) => {
+        const rawTitle = item.title || '제목 없음';
+        const rawAuthor = item.author || '작자 미상';
+        return {
+          id: `naver-${index}-${Date.now()}`,
+          title: rawTitle.replace(/<[^>]*>?/gm, ''),
+          author: rawAuthor.replace(/<[^>]*>?/gm, ''),
+          coverUrl: item.image || 'https://via.placeholder.com/128x192.png?text=No+Cover',
+          isbn: item.isbn || '', 
+          pageCount: 300
+        };
+      });
+
+      return {
+        items: parsedResults,
+        total: parseInt(jsonData.total || 0)
+      };
+    },
+    enabled: debouncedQuery.trim().length > 1,
+    staleTime: 1000 * 60 * 60, // Cache for 1 hour
+  });
+
+  const searchResults = queryData?.items || [];
+  const totalSearchResults = queryData?.total || 0;
 
   const handleSelectBook = async (book) => {
-    setSelectedBook(book);
     setShowDropdown(false);
-    setSearchQuery('');
-
+    setIsProcessingSelection(true);
     let finalBook = { ...book };
 
-    if (book.isbn) {
-      try {
-        // ISBN 값에서 숫자나 X만 남기고 (특히 하이픈 제거) 첫 번째 ISBN 선택
+    try {
+      if (book.isbn) {
         const cleanIsbn = book.isbn.replace(/[^0-9X\s]/gi, '').split(' ')[0].substring(0, 13);
         
         if (cleanIsbn) {
-          const searchParams = new URLSearchParams({
-            cert_key: SEOJI_API_KEY,
-            result_style: 'json',
-            page_no: 1,
-            page_size: 10,
-            isbn: cleanIsbn
-          });
-          
-          const endpoint = `/nl-api/seoji/SearchApi.do?${searchParams.toString()}`;
-          const res = await fetch(endpoint);
-          
-          if (res.ok) {
-            const data = await res.json();
-            const items = data.docs || []; 
-            if (items.length > 0) {
-               const detail = items[0];
-               const parsedPages = parseInt(detail.PAGE) || 0;
-               finalBook = {
-                 ...finalBook,
-                 title: detail.TITLE || finalBook.title,
-                 author: detail.AUTHOR || finalBook.author,
-                 coverUrl: detail.TITLE_URL || finalBook.coverUrl,
-                 pageCount: parsedPages > 0 ? parsedPages : finalBook.pageCount
-               };
+          // 1. Supabase DB에서 캐시된 책 메타데이터 확인
+          const { data: cachedBook, error: cacheError } = await supabase
+            .from('books')
+            .select('*')
+            .eq('isbn', cleanIsbn)
+            .single();
+
+          if (cachedBook) {
+            // 캐시 데이터가 있으면 바로 사용 (API 절약)
+            finalBook = {
+              ...finalBook,
+              title: cachedBook.title || finalBook.title,
+              author: cachedBook.author || finalBook.author,
+              coverUrl: cachedBook.cover_url || finalBook.coverUrl,
+              pageCount: cachedBook.total_pages > 0 ? cachedBook.total_pages : finalBook.pageCount
+            };
+          } else {
+            // 2. 캐시 데이터가 없으면 국립중앙도서관(서지) API 호출
+            const searchParams = new URLSearchParams({
+              cert_key: SEOJI_API_KEY,
+              result_style: 'json',
+              page_no: 1,
+              page_size: 10,
+              isbn: cleanIsbn
+            });
+            
+            const endpoint = `/nl-api/seoji/SearchApi.do?${searchParams.toString()}`;
+            const res = await fetch(endpoint);
+            
+            if (res.ok) {
+              const data = await res.json();
+              const items = data.docs || []; 
+              if (items.length > 0) {
+                 const detail = items[0];
+                 const parsedPages = parseInt(detail.PAGE) || 0;
+                 finalBook.title = detail.TITLE || finalBook.title;
+                 finalBook.author = detail.AUTHOR || finalBook.author;
+                 // 서지 API 이미지는 품질이 안 좋을 수 있으니 네이버 우선
+                 finalBook.pageCount = parsedPages > 0 ? parsedPages : finalBook.pageCount;
+              }
             }
+
+            // 3. 네이버 썸네일 이미지를 다운로드하여 Supabase Storage에 영구 저장 (CDN)
+            let supabaseImageUrl = finalBook.coverUrl;
+            if (finalBook.coverUrl && finalBook.coverUrl.includes('pstatic.net')) {
+              try {
+                // 프록시를 통해 이미지 Blob 가져오기 (CORS 회피)
+                const imgRes = await fetch(`/image-proxy?url=${encodeURIComponent(finalBook.coverUrl)}`);
+                const imgBlob = await imgRes.blob();
+                const fileExt = imgBlob.type.split('/')[1] || 'jpg';
+                const fileName = `${cleanIsbn}.${fileExt}`;
+
+                // Supabase Storage에 업로드
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('book-covers')
+                  .upload(fileName, imgBlob, { upsert: true });
+
+                if (!uploadError) {
+                  const { data: publicUrlData } = supabase.storage
+                    .from('book-covers')
+                    .getPublicUrl(fileName);
+                  supabaseImageUrl = publicUrlData.publicUrl;
+                  finalBook.coverUrl = supabaseImageUrl;
+                }
+              } catch (e) {
+                console.warn('Failed to upload image to Supabase, using original Naver URL', e);
+              }
+            }
+
+            // 4. 새로운 책 정보를 DB에 캐싱
+            await supabase.from('books').insert({
+              isbn: cleanIsbn,
+              title: finalBook.title,
+              author: finalBook.author,
+              cover_url: supabaseImageUrl,
+              total_pages: finalBook.pageCount
+            });
           }
         }
-      } catch (err) {
-        console.error('Seoji ISBN search failed:', err);
       }
+    } catch (err) {
+      console.error('Book selection processing failed:', err);
     }
 
+    setSearchQuery('');
     setSelectedBook(finalBook);
     setEndPage(finalBook.pageCount ? finalBook.pageCount.toString() : '');
+    setIsProcessingSelection(false);
   };
 
   const handleDelete = () => {
@@ -421,7 +464,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
                 {/* Search Dropdown */}
                 {showDropdown && (
                   <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl z-50 flex flex-col">
-                    <div className="max-h-64 overflow-y-auto">
+                    <div className="max-h-64 overflow-y-auto relative">
                       {isSearching ? (
                         <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-primary-500" /></div>
                       ) : searchResults.length > 0 ? searchResults.map(book => (
@@ -429,7 +472,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
                           key={book.id}
                           type="button"
                           onClick={() => handleSelectBook(book)}
-                          className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors text-left"
+                          className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 border-b border-slate-100 last:border-0 transition-colors text-left disabled:opacity-50"
+                          disabled={isProcessingSelection}
                         >
                           <img src={book.coverUrl} alt={book.title} className="w-8 h-12 object-cover rounded shadow-sm" />
                           <div className="flex-1 overflow-hidden">
@@ -439,6 +483,12 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
                         </button>
                       )) : (
                         <div className="p-4 text-center text-sm text-slate-500">검색 결과가 없습니다.</div>
+                      )}
+                      
+                      {isProcessingSelection && (
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center">
+                           <Loader2 className="animate-spin text-primary-500 h-6 w-6" />
+                        </div>
                       )}
                     </div>
                     
