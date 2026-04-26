@@ -119,7 +119,7 @@ const CalendarDayCell = ({
                 <div className="mt-1 w-full bg-slate-100 rounded-full h-1 overflow-hidden">
                   <div 
                     className="bg-primary-500 h-full rounded-full" 
-                    style={{ width: `${(mainReading.pagesRead / mainReading.totalPages) * 100}%` }}
+                    style={{ width: `${((mainReading.endPage !== undefined && mainReading.endPage !== null ? mainReading.endPage : (mainReading.pagesRead || 0)) / (mainReading.totalPages || 1)) * 100}%` }}
                   />
                 </div>
               )}
@@ -128,7 +128,12 @@ const CalendarDayCell = ({
               {extraCount === 0 && (
                 <div className={`absolute opacity-0 group-hover/book:opacity-100 bottom-full ${popupAlignClass} mb-2 w-48 bg-slate-800 text-white text-xs rounded-xl p-3 pointer-events-none transition-opacity z-50 shadow-xl`}>
                   <p className="font-semibold mb-1 line-clamp-1">{mainReading.bookTitle}</p>
-                  <p className="text-slate-300">{mainReading.pagesRead}p 읽음 (총 {mainReading.totalPages}p)</p>
+                  <p className="text-slate-300">
+                    {mainReading.startPage !== undefined && mainReading.startPage !== null && mainReading.endPage !== undefined && mainReading.endPage !== null
+                      ? `${mainReading.startPage}~${mainReading.endPage}p 읽음 `
+                      : `${mainReading.pagesRead}p 읽음 `}
+                    (총 {mainReading.totalPages}p)
+                  </p>
                 </div>
               )}
             </div>
@@ -155,7 +160,12 @@ const CalendarDayCell = ({
                       </div>
                       <div className="flex-1 overflow-hidden">
                         <p className="text-xs font-semibold text-slate-800 line-clamp-1 group-hover/item:text-primary-600 transition-colors">{r.bookTitle}</p>
-                        <p className="text-[10px] text-slate-500 mt-0.5">{r.pagesRead}p 읽음 <span className="text-slate-300">/ {r.totalPages}p</span></p>
+                        <p className="text-[10px] text-slate-500 mt-0.5">
+                          {r.startPage !== undefined && r.startPage !== null && r.endPage !== undefined && r.endPage !== null
+                            ? `${r.startPage}~${r.endPage}p 읽음 `
+                            : `${r.pagesRead}p 읽음 `}
+                          <span className="text-slate-300">/ {r.totalPages}p</span>
+                        </p>
                       </div>
                     </button>
                   ))}

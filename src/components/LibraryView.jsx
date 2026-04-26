@@ -4,7 +4,7 @@ import { readingsAtom } from '../store';
 import { BookOpen, CheckCircle2, Circle } from 'lucide-react';
 import LibraryDetailModal from './LibraryDetailModal';
 
-const LibraryView = () => {
+const LibraryView = ({ onOpenModal }) => {
   const readings = useAtomValue(readingsAtom);
   const [filter, setFilter] = useState('all'); // all | reading | completed
   const [selectedRecord, setSelectedRecord] = useState(null);
@@ -59,7 +59,8 @@ const LibraryView = () => {
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6 mt-4">
           {filteredReadings.map(book => {
              // 진행률 계산
-             const progress = Math.min(Math.round(((book.pagesRead || 0) / (book.totalPages || 1)) * 100), 100);
+             const readCount = book.endPage !== undefined && book.endPage !== null ? book.endPage : (book.pagesRead || 0);
+             const progress = Math.min(Math.round((readCount / (book.totalPages || 1)) * 100), 100);
              return (
               <div 
                 key={book.id} 
@@ -112,6 +113,13 @@ const LibraryView = () => {
           setSelectedRecord(null);
         }}
         record={selectedRecord}
+        onContinueRecording={(book) => {
+          setIsModalOpen(false);
+          setSelectedRecord(null);
+          if (onOpenModal) {
+            onOpenModal(new Date(), null, null, book);
+          }
+        }}
       />
     </div>
   );

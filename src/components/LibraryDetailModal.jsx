@@ -4,7 +4,7 @@ import { useSetAtom } from 'jotai';
 import { updateReadingAtom, deleteReadingAtom } from '../store';
 import dayjs from 'dayjs';
 
-const LibraryDetailModal = ({ isOpen, onClose, record }) => {
+const LibraryDetailModal = ({ isOpen, onClose, record, onContinueRecording }) => {
   const updateReading = useSetAtom(updateReadingAtom);
   const deleteReading = useSetAtom(deleteReadingAtom);
   
@@ -59,7 +59,8 @@ const LibraryDetailModal = ({ isOpen, onClose, record }) => {
     setQuotes(quotes.filter(q => q.id !== id));
   };
 
-  const progress = Math.min(Math.round(((record.pagesRead || 0) / (record.totalPages || 1)) * 100), 100);
+  const readCount = record.endPage !== undefined && record.endPage !== null ? record.endPage : (record.pagesRead || 0);
+  const progress = Math.min(Math.round((readCount / (record.totalPages || 1)) * 100), 100);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-6">
@@ -129,7 +130,11 @@ const LibraryDetailModal = ({ isOpen, onClose, record }) => {
                   <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden mb-2">
                     <div className="bg-primary-500 h-full rounded-full" style={{ width: `${progress}%` }} />
                   </div>
-                  <p className="text-xs text-right text-slate-500">{record.pagesRead} / {record.totalPages} 쪽</p>
+                  <p className="text-xs text-right text-slate-500">
+                    {record.startPage !== undefined && record.startPage !== null && record.endPage !== undefined && record.endPage !== null
+                      ? `${record.startPage} ~ ${record.endPage}`
+                      : record.pagesRead} / {record.totalPages} 쪽
+                  </p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -236,6 +241,23 @@ const LibraryDetailModal = ({ isOpen, onClose, record }) => {
             삭제
           </button>
           <div className="flex gap-3">
+            <button 
+              onClick={() => {
+                if (onContinueRecording) {
+                  onContinueRecording({
+                    title: record.bookTitle,
+                    author: record.author,
+                    coverUrl: record.coverUrl,
+                    pageCount: record.totalPages,
+                    isbn: record.isbn || ''
+                  });
+                }
+              }}
+              className="px-5 py-2.5 rounded-xl text-primary-600 bg-primary-50 font-medium hover:bg-primary-100 transition-colors text-sm flex items-center gap-2"
+            >
+              <Plus size={16} />
+              이어서 기록하기
+            </button>
             <button 
               onClick={onClose}
               className="px-5 py-2.5 rounded-xl text-slate-600 font-medium hover:bg-slate-100 transition-colors text-sm"

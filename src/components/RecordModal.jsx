@@ -3,9 +3,9 @@ import { X, Search, Book, Clock, Edit3, CheckCircle2, Circle, Loader2, Trash2, C
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 dayjs.locale('ko');
-import { useSetAtom } from 'jotai';
+import { useAtomValue, useSetAtom } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
-import { addReadingAtom, updateReadingAtom, deleteReadingAtom } from '../store';
+import { addReadingAtom, updateReadingAtom, deleteReadingAtom, readingsAtom } from '../store';
 import { supabase } from '../lib/supabase';
 
 // 환경변수에서 API 키 로드
@@ -13,10 +13,38 @@ const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID;
 const NAVER_CLIENT_SECRET = import.meta.env.VITE_NAVER_CLIENT_SECRET;
 const SEOJI_API_KEY = import.meta.env.VITE_SEOJI_API_KEY;
 
-const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialRecord }) => {
+const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialRecord, initialBook }) => {
   const addReading = useSetAtom(addReadingAtom);
   const updateReading = useSetAtom(updateReadingAtom);
   const deleteReading = useSetAtom(deleteReadingAtom);
+  const readings = useAtomValue(readingsAtom);
+
+  const recentBooks = [];
+  const seen = new Set();
+  for (const r of readings) {
+    if (!seen.has(r.bookTitle)) {
+      seen.add(r.bookTitle);
+      if (r.status !== 'completed') {
+        recentBooks.push({
+          title: r.bookTitle,
+          author: r.author,
+          coverUrl: r.coverUrl,
+          pageCount: r.totalPages,
+          isbn: r.isbn || ''
+        });
+        if (recentBooks.length >= 5) break;
+      }
+    }
+  }
+
+  const getAccumulatedPages = (bookTitle) => {
+    const bookReadings = readings.filter(r => r.bookTitle === bookTitle);
+    const hasEndPage = bookReadings.some(r => r.endPage !== undefined && r.endPage !== null);
+    if (hasEndPage) {
+      return Math.max(0, ...bookReadings.map(r => parseInt(r.endPage) || 0));
+    }
+    return bookReadings.reduce((sum, r) => sum + (parseInt(r.pagesRead) || 0), 0);
+  };
 
   const [status, setStatus] = useState('reading');
   const [searchType, setSearchType] = useState('kwd'); // kwd, title, author, isbn
@@ -50,8 +78,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
           coverUrl: initialRecord.coverUrl,
           pageCount: initialRecord.totalPages
         });
-        setStartPage('');
-        setEndPage(initialRecord.pagesRead ? initialRecord.pagesRead.toString() : '');
+        setStartPage(initialRecord.startPage !== undefined && initialRecord.startPage !== null ? initialRecord.startPage.toString() : '');
+        setEndPage(initialRecord.endPage !== undefined && initialRecord.endPage !== null ? initialRecord.endPage.toString() : initialRecord.pagesRead ? initialRecord.pagesRead.toString() : '');
         setReadingTime(initialRecord.readingTime ? initialRecord.readingTime.toString() : '');
         setMemo(initialRecord.memo || '');
         setRecordDate(initialRecord.date);
@@ -62,8 +90,15 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         setSearchType('kwd');
         setSearchQuery('');
         setSearchPage(1);
-        setSelectedBook(null);
-        setStartPage('');
+        setSelectedBook(initialBook || null);
+        
+        if (initialBook) {
+          const accumulated = getAccumulatedPages(initialBook.title);
+          setStartPage(accumulated > 0 ? accumulated.toString() : '');
+        } else {
+          setStartPage('');
+        }
+        
         setEndPage('');
         setReadingTime('');
         setMemo('');
@@ -75,7 +110,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         setIsMultiDay(endD !== d);
       }
     }
-  }, [isOpen, initialRecord]);
+  }, [isOpen, initialRecord, initialBook]);
 
   // Debounce search query
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -249,7 +284,11 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
 
     setSearchQuery('');
     setSelectedBook(finalBook);
-    setEndPage(finalBook.pageCount ? finalBook.pageCount.toString() : '');
+    
+    const accumulated = getAccumulatedPages(finalBook.title);
+    setStartPage(accumulated > 0 ? accumulated.toString() : '');
+    setEndPage(accumulated === 0 && finalBook.pageCount ? finalBook.pageCount.toString() : '');
+    
     setIsProcessingSelection(false);
   };
 
@@ -277,6 +316,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         author: selectedBook.author,
         coverUrl: selectedBook.coverUrl,
         date: recordDate,
+        startPage: sPage,
+        endPage: ePage,
         pagesRead: pagesReadAmount,
         totalPages: selectedBook.pageCount || ePage || 300,
         status: status,
@@ -301,16 +342,20 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
       const remainderPages = pagesReadAmount % datesToRecord.length;
       const dailyTime = Math.floor((parseInt(readingTime) || 0) / datesToRecord.length);
 
+      let currentStart = sPage;
       const readingsToInsert = datesToRecord.map((d, index) => {
          const isLastDay = index === datesToRecord.length - 1;
          const pRead = dailyPages + (isLastDay ? remainderPages : 0);
          const cStatus = isLastDay ? status : 'reading';
+         const currentEnd = currentStart + pRead;
          
-         return {
+         const record = {
           bookTitle: selectedBook.title,
           author: selectedBook.author,
           coverUrl: selectedBook.coverUrl,
           date: d,
+          startPage: currentStart,
+          endPage: currentEnd,
           pagesRead: pRead,
           totalPages: selectedBook.pageCount || ePage || 300,
           status: cStatus,
@@ -318,6 +363,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
           readingTime: dailyTime,
           rating: cStatus === 'completed' ? 5 : 0
          };
+         currentStart = currentEnd;
+         return record;
       });
 
       addReading(readingsToInsert);
@@ -513,6 +560,28 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
                         </button>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* Recently Read Books */}
+                {!searchQuery && recentBooks.length > 0 && (
+                  <div className="mt-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <p className="text-xs font-semibold text-slate-500 mb-2">최근 읽은 책에서 선택하기</p>
+                    <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
+                      {recentBooks.map((book, idx) => (
+                        <button 
+                          key={idx}
+                          type="button"
+                          onClick={() => handleSelectBook(book)}
+                          className="flex flex-col items-center gap-2 w-20 flex-shrink-0 group outline-none"
+                        >
+                          <div className="w-16 h-24 rounded-lg overflow-hidden shadow-sm border border-slate-100 group-hover:border-primary-300 group-hover:shadow-md transition-all group-hover:-translate-y-1">
+                            <img src={book.coverUrl} alt={book.title} className="w-full h-full object-cover" />
+                          </div>
+                          <p className="text-[10px] font-medium text-slate-700 line-clamp-2 w-full text-center leading-tight group-hover:text-primary-600 transition-colors">{book.title}</p>
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
               </div>

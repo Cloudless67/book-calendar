@@ -15,15 +15,17 @@ function App() {
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [selectedBook, setSelectedBookState] = useState(null);
 
   useEffect(() => {
     loadReadings();
   }, [loadReadings]);
 
-  const handleOpenModal = (date = new Date(), record = null, endDate = null) => {
+  const handleOpenModal = (date = new Date(), record = null, endDate = null, initialBook = null) => {
     setSelectedDate(date);
     setSelectedRecord(record);
     setSelectedEndDate(endDate);
+    setSelectedBookState(initialBook);
     setIsModalOpen(true);
   };
 
@@ -32,6 +34,7 @@ function App() {
     setSelectedDate(null);
     setSelectedRecord(null);
     setSelectedEndDate(null);
+    setSelectedBookState(null);
   };
 
   return (
@@ -66,7 +69,7 @@ function App() {
             </div>
           )}
 
-          {currentView === 'library' && <LibraryView />}
+          {currentView === 'library' && <LibraryView onOpenModal={handleOpenModal} />}
           {currentView === 'stats' && <StatsView />}
 
         </div>
@@ -78,6 +81,7 @@ function App() {
         initialDate={selectedDate}
         initialEndDate={selectedEndDate}
         initialRecord={selectedRecord}
+        initialBook={selectedBook}
       />
     </div>
   );

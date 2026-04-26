@@ -96,7 +96,12 @@ export const statsAtom = atom((get) => {
   // 이번달 통계 등을 실제로는 날짜 기반으로 계산해야 하지만 일단 단순화
   const booksReadThisMonth = readings.filter(r => r.status === 'completed').length;
   // 임시 목표치 1000
-  const totalPagesRead = readings.reduce((acc, curr) => acc + (parseInt(curr.pagesRead) || 0), 0);
+  const totalPagesRead = readings.reduce((acc, curr) => {
+    const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
+                  ? (parseInt(curr.endPage) || 0) - (parseInt(curr.startPage) || 0)
+                  : (parseInt(curr.pagesRead) || 0);
+    return acc + Math.max(0, delta);
+  }, 0);
   const goalProgress = Math.min(Math.round((totalPagesRead / 1000) * 100), 100);
   
   return {

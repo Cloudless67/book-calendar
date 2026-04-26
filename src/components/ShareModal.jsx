@@ -35,7 +35,12 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   // Calculate month stats
   const currentMonthReadings = readings.filter(r => dayjs(r.date).isSame(currentDate, 'month'));
   const completedBooks = new Set(currentMonthReadings.filter(r => r.status === 'completed').map(r => r.bookTitle)).size;
-  const totalPages = currentMonthReadings.reduce((sum, r) => sum + Number(r.pagesRead || 0), 0);
+  const totalPages = currentMonthReadings.reduce((sum, r) => {
+    const delta = (r.endPage !== undefined && r.startPage !== undefined) 
+                  ? (parseInt(r.endPage) || 0) - (parseInt(r.startPage) || 0)
+                  : (parseInt(r.pagesRead) || 0);
+    return sum + Math.max(0, delta);
+  }, 0);
   
   // Simple streak calculation (consecutive days reading up to today in this month)
   let streak = 0;
