@@ -116,4 +116,21 @@
   - 네이버에서 제공하는 썸네일 URL을 직접 사용하지 않고, 프록시를 통해 Blob으로 다운로드한 뒤 내 Supabase `book-covers` 버킷에 자동 업로드하도록 아키텍처 개편.
   - 브라우저에 보여지는 이미지는 영구적으로 보존되는 Supabase 글로벌 CDN URL로 교체되어 외부 서비스 의존도를 완전히 분리.
 
+---
+## 12. 데이터 모델 개선 (`startPage`, `endPage` 도입)
+- **절대 페이지 관리 체계로 전환**: 기존의 읽은 분량(`pagesRead`) 중심 저장 방식에서, 독서의 시작점과 끝점을 명확히 기록하는 `startPage` 및 `endPage` 컬럼 체계로 Supabase 스키마 고도화.
+- **연속 독서 UX 개선**: 기록 추가 시 해당 도서의 마지막 `endPage`를 자동으로 찾아 다음 기록의 `startPage`로 제안하는 스마트 필링 로직 구현.
+- **진행률 계산 정밀화**: 서재 뷰 및 캘린더 등 모든 UI의 진행률 계산을 `endPage / totalPages`의 절대 비율 방식으로 변경하여 데이터 신뢰도 향상.
+- **하이브리드 호환성 유지**: `startPage/endPage`가 없는 과거 데이터에 대해서도 `pagesRead`를 활용해 끊김 없이 통계를 보여주는 폴백(Fallback) 로직 적용.
+
+## 13. 기록 모달(`RecordModal`) 대규모 리팩토링 및 모듈화
+- **파일 사이즈 대폭 슬림화**: 730라인이 넘던 단일 파일을 기능별 서브 컴포넌트로 분리하여 가독성 및 유지보수성 극대화 (약 230라인으로 축소).
+- **비즈니스 로직 추출 (`src/lib/bookApi.js`)**: 네이버 검색, 국립중앙도서관 API 연동, 이미지 프록시 및 Supabase Storage 업로드 등의 복잡한 비동기 로직을 캡슐화하여 UI 코드와 완전 분리.
+- **UI 섹션 컴포넌트화 (`src/components/record/`)**:
+  - `DateSelector`: 날짜 및 멀티 데이 설정 UI.
+  - `BookSearch`: 도서 검색 입력 및 결과 목록 UI.
+  - `RecentBooks`: 최근 읽은 책 선택 UI.
+  - `BookSelectedCard`: 선택된 도서 요약 정보 UI.
+  - `RecordFormFields`: 페이지, 시간, 메모, 상태 입력 UI.
+
 *추후 고도화할 목표 혹은 TODO가 있다면 본 문서의 하단에 덧붙이고 이어서 진행할 수 있습니다.*

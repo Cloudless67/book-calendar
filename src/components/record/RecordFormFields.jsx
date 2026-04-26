@@ -1,0 +1,105 @@
+import React from 'react';
+import { Book, Clock, Edit3, CheckCircle2, Circle } from 'lucide-react';
+
+const RecordFormFields = ({
+  startPage,
+  setStartPage,
+  endPage,
+  setEndPage,
+  readingTime,
+  setReadingTime,
+  memo,
+  setMemo,
+  status,
+  setStatus,
+}) => {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Pages Read */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+            <Book size={16} className="text-slate-400" /> 페이지 기록
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="시작"
+              value={startPage}
+              onChange={(e) => setStartPage(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+            <span className="text-slate-400">~</span>
+            <input
+              type="number"
+              placeholder="끝"
+              value={endPage}
+              onChange={(e) => setEndPage(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+            <span className="text-slate-600 font-medium whitespace-nowrap">쪽</span>
+          </div>
+        </div>
+
+        {/* Reading Time */}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+            <Clock size={16} className="text-slate-400" /> 독서 시간
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              placeholder="예: 45"
+              value={readingTime}
+              onChange={(e) => setReadingTime(e.target.value)}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+            />
+            <span className="text-slate-600 font-medium whitespace-nowrap">분</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Review / Memo */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+          <Edit3 size={16} className="text-slate-400" /> 한 줄 평 및 메모
+        </label>
+        <textarea
+          rows={3}
+          value={memo}
+          onChange={(e) => setMemo(e.target.value)}
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
+          placeholder="오늘 읽은 내용 중 기억에 남는 문장이나 느낀 점을 간단히 적어보세요."
+        ></textarea>
+      </div>
+
+      {/* Status Toggle */}
+      <div className="flex gap-3">
+        <button
+          onClick={() => setStatus('reading')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${
+            status === 'reading'
+              ? 'border-primary-500 bg-primary-50 text-primary-700 font-semibold'
+              : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+          }`}
+        >
+          {status === 'reading' ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+          계속 읽는 중
+        </button>
+        <button
+          onClick={() => setStatus('completed')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border-2 transition-all ${
+            status === 'completed'
+              ? 'border-emerald-500 bg-emerald-50 text-emerald-700 font-semibold'
+              : 'border-slate-100 bg-white text-slate-500 hover:border-slate-200'
+          }`}
+        >
+          {status === 'completed' ? <CheckCircle2 size={18} /> : <Circle size={18} />}
+          오늘 완독했어요!
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default RecordFormFields;
