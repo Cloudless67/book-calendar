@@ -22,12 +22,9 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
   const [searchType, setSearchType] = useState('kwd'); // kwd, title, author, isbn
   const [searchQuery, setSearchQuery] = useState('');
   const [searchPage, setSearchPage] = useState(1);
-  const [searchPage, setSearchPage] = useState(1);
   const [selectedBook, setSelectedBook] = useState(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isProcessingSelection, setIsProcessingSelection] = useState(false);
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [showDropdown, setShowDropdown] = useState(false);
   
   const [recordDate, setRecordDate] = useState('');
   const [recordEndDate, setRecordEndDate] = useState('');
@@ -171,7 +168,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
             .from('books')
             .select('*')
             .eq('isbn', cleanIsbn)
-            .single();
+            .maybeSingle();
 
           if (cachedBook) {
             // 캐시 데이터가 있으면 바로 사용 (API 절약)
