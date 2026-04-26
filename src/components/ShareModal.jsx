@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Download, Share2 } from 'lucide-react';
 import { toPng } from 'html-to-image';
 import dayjs from 'dayjs';
@@ -77,7 +78,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div className="flex min-h-full items-center justify-center p-4 text-center">
         {/* Backdrop */}
@@ -87,9 +88,9 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         />
         
         {/* Modal Content */}
-        <div className="relative w-full max-w-[520px] bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl flex flex-col text-left my-4 sm:my-8">
+        <div className="relative w-full max-w-[520px] max-h-[90vh] bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl flex flex-col text-left overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200/50">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200/50 shrink-0">
           <div>
             <h3 className="text-lg font-bold text-slate-800">이달의 독서 기록 공유</h3>
             <p className="text-sm text-slate-500">인스타그램 피드에 최적화된 사이즈입니다</p>
@@ -103,7 +104,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         </div>
 
         {/* Share Preview Area */}
-        <div className="p-4 md:p-6 flex justify-center bg-slate-100/50">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 flex justify-center items-start bg-slate-100/50 custom-scrollbar">
           {/* The actual element to be captured */}
           <div 
             ref={shareRef}
@@ -205,7 +206,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         </div>
 
         {/* Actions */}
-        <div className="p-4 md:p-6 bg-white border-t border-slate-100 flex justify-end gap-3">
+        <div className="p-4 md:p-6 bg-white border-t border-slate-100 flex justify-end gap-3 shrink-0">
           <button
             onClick={onClose}
             className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
@@ -229,7 +230,8 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

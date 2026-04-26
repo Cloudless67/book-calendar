@@ -91,8 +91,8 @@ const LibraryDetailModal = ({ isOpen, onClose, record, onContinueRecording }) =>
           
           {/* Left Column (Book Metadata) */}
           <div className="md:w-80 bg-white border-r border-slate-100 p-6 md:p-8 shrink-0 flex flex-col items-center md:items-start text-center md:text-left">
-            <div className="w-32 md:w-48 aspect-[2/3] rounded-xl overflow-hidden shadow-lg mb-6 mx-auto md:mx-0">
-              <img src={record.coverUrl} alt={record.bookTitle} className="w-full h-full object-cover" />
+            <div className="w-32 md:w-48 rounded-xl overflow-hidden shadow-lg mb-6 mx-auto md:mx-0">
+              <img src={record.coverUrl} alt={record.bookTitle} className="w-full h-auto object-contain" />
             </div>
             
             <div className="w-full">
@@ -131,16 +131,20 @@ const LibraryDetailModal = ({ isOpen, onClose, record, onContinueRecording }) =>
                     <div className="bg-primary-500 h-full rounded-full" style={{ width: `${progress}%` }} />
                   </div>
                   <p className="text-xs text-right text-slate-500">
-                    {record.startPage !== undefined && record.startPage !== null && record.endPage !== undefined && record.endPage !== null
-                      ? `${record.startPage} ~ ${record.endPage}`
+                    {(record.minStartPage ?? record.startPage) !== undefined && (record.minStartPage ?? record.startPage) !== null && record.endPage !== undefined && record.endPage !== null
+                      ? `${record.minStartPage ?? record.startPage} ~ ${record.endPage}`
                       : record.pagesRead} / {record.totalPages} 쪽
                   </p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-                     <span className="block text-xs font-medium text-slate-500 mb-1">기록일</span>
-                     <span className="block text-sm font-semibold text-slate-700">{dayjs(record.date).format('YYYY.MM.DD')}</span>
+                     <span className="block text-xs font-medium text-slate-500 mb-1">기록 기간</span>
+                     <span className="block text-sm font-semibold text-slate-700">
+                       {record.startDate && record.endDate && record.startDate !== record.endDate 
+                         ? `${dayjs(record.startDate).format('YYYY.MM.DD')} ~ ${dayjs(record.endDate).format('MM.DD')}`
+                         : dayjs(record.date).format('YYYY.MM.DD')}
+                     </span>
                    </div>
                    <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
                      <span className="block text-xs font-medium text-slate-500 mb-1">독서 시간</span>

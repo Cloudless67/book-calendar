@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAtomValue } from 'jotai';
 import { readingsAtom } from '../store';
 import { BookOpen, CheckCircle2, Circle } from 'lucide-react';
+import dayjs from 'dayjs';
 import LibraryDetailModal from './LibraryDetailModal';
 
 const LibraryView = ({ onOpenModal }) => {
@@ -10,8 +11,63 @@ const LibraryView = ({ onOpenModal }) => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 중복 책들을 id 기준이 아닌 책 제목 기준으로 묶어서 고유하게 보여주고 싶을 수 있지만, 여기서는 개별 독서 기록 기준으로 나열합니다.
-  const filteredReadings = readings.filter(r => {
+  // 책 정보를 하나로 합쳐서 보여주는 로직
+  const groupedBooks = React.useMemo(() => {
+    const groups = {};
+    
+    readings.forEach(record => {
+      const key = record.isbn || record.bookTitle;
+      if (!groups[key]) {
+        groups[key] = { ...record, startDate: record.date, endDate: record.date, minStartPage: record.startPage !== undefined ? record.startPage : 0 };
+      } else {
+        // 기존 그룹 정보 업데이트
+        const currentGroup = groups[key];
+        
+        // 날짜 범위 추적
+        if (new Date(record.date) < new Date(currentGroup.startDate)) {
+          currentGroup.startDate = record.date;
+        }
+        if (new Date(record.date) > new Date(currentGroup.endDate)) {
+          currentGroup.endDate = record.date;
+        }
+
+        // 상태: 하나라도 완료면 완료
+        if (record.status === 'completed') {
+          currentGroup.status = 'completed';
+        }
+        
+        // 진행률: 가장 높은 endPage 기준
+        const currentEndPage = currentGroup.endPage !== undefined && currentGroup.endPage !== null ? currentGroup.endPage : (currentGroup.pagesRead || 0);
+        const recordEndPage = record.endPage !== undefined && record.endPage !== null ? record.endPage : (record.pagesRead || 0);
+        
+        if (recordEndPage > currentEndPage) {
+          currentGroup.endPage = recordEndPage;
+          currentGroup.pagesRead = record.pagesRead;
+        }
+
+        // 가장 낮은 startPage 추적
+        if (record.startPage !== undefined && record.startPage !== null) {
+          if (currentGroup.minStartPage === undefined || record.startPage < currentGroup.minStartPage) {
+            currentGroup.minStartPage = record.startPage;
+          }
+        }
+
+        // 최신 날짜 정보 유지 (메모, 평점 포함)
+        if (new Date(record.date) >= new Date(currentGroup.date)) {
+          currentGroup.date = record.date;
+          currentGroup.memo = record.memo || currentGroup.memo;
+          currentGroup.rating = record.rating || currentGroup.rating;
+          currentGroup.id = record.id; // 상세 모달을 위해 최신 레코드 ID 유지
+        }
+        
+        currentGroup.readingTime = (currentGroup.readingTime || 0) + (record.readingTime || 0);
+      }
+    });
+    
+    return Object.values(groups).sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [readings]);
+
+  const filteredReadings = groupedBooks.filter(r => {
     if (filter === 'all') return true;
     return r.status === filter;
   });
@@ -88,7 +144,14 @@ const LibraryView = ({ onOpenModal }) => {
                 
                 <div>
                   <h3 className="font-bold text-slate-800 text-sm line-clamp-1 group-hover:text-primary-600 transition-colors">{book.bookTitle}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-1 mt-0.5">{book.author}</p>
+                  <div className="flex justify-between items-center mt-0.5">
+                    <p className="text-[10px] text-slate-500 line-clamp-1">{book.author}</p>
+                    <p className="text-[10px] text-slate-400">
+                      {book.startDate && book.endDate && book.startDate !== book.endDate 
+                        ? `${dayjs(book.startDate).format('MM.DD')}~${dayjs(book.endDate).format('MM.DD')}`
+                        : dayjs(book.date).format('MM.DD')}
+                    </p>
+                  </div>
                   
                   <div className="mt-3 flex items-center gap-2">
                     <div className="flex-1 bg-slate-100 rounded-full h-1.5 overflow-hidden">
