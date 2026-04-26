@@ -148,8 +148,8 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                           {dayNumber}
                         </span>
                         {completed && (
-                          <span className="absolute -top-1 -right-1 bg-gradient-to-br from-primary-400 to-primary-600 text-white text-[8px] md:text-[10px] font-extrabold px-1.5 py-0.5 rounded-full shadow-md tracking-tighter z-30">
-                            FINISH
+                          <span className="absolute top-0 right-0 bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[7px] lg:text-[8px] font-bold px-1 py-0.5 rounded-bl-md shadow-sm z-10">
+                            완독
                           </span>
                         )}
                         {!completed && <div className="absolute inset-0 bg-white/20 rounded-xl z-10" />}
