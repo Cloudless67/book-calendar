@@ -6,11 +6,23 @@ import { mockReadings, mockStats } from './mockData';
 export const readingsAtom = atom([]);
 export const isReadingsLoadedAtom = atom(false);
 
+// Auth 상태
+export const userAtom = atom(null);
+export const isAuthLoadedAtom = atom(false);
+
 // Supabase 연동: 초기 데이터 로드 (에러 시 mockData로 폴백)
 export const loadReadingsAtom = atom(null, async (get, set) => {
+  const user = get(userAtom);
+  if (!user) {
+    set(readingsAtom, []);
+    set(isReadingsLoadedAtom, true);
+    return;
+  }
+
   const { data, error } = await supabase
     .from('readings')
     .select('*')
+    .eq('user_id', user.id)
     .order('date', { ascending: false });
 
   if (error) {
@@ -29,8 +41,14 @@ export const currentViewAtom = atom('calendar');
 export const addReadingAtom = atom(
   null,
   async (get, set, newReadingOrReadings) => {
+    const user = get(userAtom);
+    if (!user) return;
+    
     const readingsArray = Array.isArray(newReadingOrReadings) ? newReadingOrReadings : [newReadingOrReadings];
-    const insertData = readingsArray.map(({ id, ...rest }) => rest);
+    const insertData = readingsArray.map(({ id, ...rest }) => ({
+      ...rest,
+      user_id: user.id
+    }));
 
     const { data, error } = await supabase
       .from('readings')
@@ -52,12 +70,16 @@ export const addReadingAtom = atom(
 export const updateReadingAtom = atom(
   null,
   async (get, set, updatedReading) => {
+    const user = get(userAtom);
+    if (!user) return;
+
     const { id, ...readingToUpdate } = updatedReading;
 
     const { data, error } = await supabase
       .from('readings')
       .update(readingToUpdate)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select();
 
     if (error) {
@@ -75,10 +97,14 @@ export const updateReadingAtom = atom(
 export const deleteReadingAtom = atom(
   null,
   async (get, set, idToDelete) => {
+    const user = get(userAtom);
+    if (!user) return;
+
     const { error } = await supabase
       .from('readings')
       .delete()
-      .eq('id', idToDelete);
+      .eq('id', idToDelete)
+      .eq('user_id', user.id);
 
     if (error) {
       console.warn('Supabase delete failed. Optimistically updating local state.', error);

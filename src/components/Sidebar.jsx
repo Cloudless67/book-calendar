@@ -15,9 +15,7 @@ const Sidebar = () => {
   return (
     <aside className="fixed bottom-0 left-0 right-0 md:top-0 md:right-auto md:w-64 h-16 md:h-screen bg-white rounded-t-2xl md:rounded-none border-t md:border-r border-slate-200 flex flex-row md:flex-col md:p-6 z-50 transition-all shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)] md:shadow-none">
       <div className="hidden md:flex items-center gap-3 mb-10">
-        <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center shadow-lg shadow-primary-500/30">
-          <BookOpen className="text-white" size={24} />
-        </div>
+        <img src="./booklog.png" alt="" className='w-16 h-16' />
         <h1 className="text-xl font-bold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">
           BookLog
         </h1>
