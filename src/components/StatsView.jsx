@@ -1,7 +1,7 @@
 import React from 'react';
+import dayjs from 'dayjs';
 import { useAtomValue } from 'jotai';
-import { statsAtom, readingsAtom } from '../store';
-import { genreData } from '../mockData';
+import { statsAtom, readingsAtom, booksAtom } from '../store';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { TrendingUp, Award, Target, Flame } from 'lucide-react';
 
@@ -10,14 +10,105 @@ const COLORS = ['#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF'];
 const StatsView = () => {
   const stats = useAtomValue(statsAtom);
   const readings = useAtomValue(readingsAtom);
+  const books = useAtomValue(booksAtom);
 
-  // 차트를 위한 임시 월별 데이터 생성 로직
-  const monthlyData = [
-    { name: '1월', 읽은책: 2, 페이지: 650 },
-    { name: '2월', 읽은책: 3, 페이지: 820 },
-    { name: '3월', 읽은책: 1, 페이지: 320 },
-    { name: '4월', 읽은책: stats.booksReadThisMonth || 0, 페이지: stats.totalPagesRead || 0 }, // 현재 우리가 계산한 이달 통계
-  ];
+  const getSummaryMessage = (stats) => {
+    if (stats.currentStreak >= 7) {
+      return {
+        badge: "최고의 꾸준함!",
+        message: "대단해요! 일주일 이상 멈추지 않고 독서하셨네요."
+      };
+    } else if (stats.booksReadThisMonth >= 3) {
+      return {
+        badge: "엄청난 다독가!",
+        message: `훌륭합니다! 이번 달에 벌써 ${stats.booksReadThisMonth}권을 완독하셨어요.`
+      };
+    } else if (stats.totalPagesRead >= 500) {
+      return {
+        badge: "지식이 쌓이는 중!",
+        message: `멋집니다! 무려 ${stats.totalPagesRead}쪽의 지식을 흡수하셨어요.`
+      };
+    } else if (stats.totalPagesRead > 0) {
+      return {
+        badge: "좋은 시작!",
+        message: "꾸준한 독서로 매일매일 성장하고 있어요."
+      };
+    } else {
+      return {
+        badge: "시작이 반!",
+        message: "오늘부터 가벼운 마음으로 독서를 시작해볼까요?"
+      };
+    }
+  };
+
+  const summary = getSummaryMessage(stats);
+
+  // 차트를 위한 최근 6개월 월별 데이터 생성 로직
+  const monthlyData = Array.from({ length: 6 }).map((_, i) => {
+    const monthObj = dayjs().subtract(5 - i, 'month');
+    const monthLabel = monthObj.format('M월');
+    
+    const monthReadings = readings.filter(r => {
+      const rDate = dayjs(r.date);
+      return rDate.month() === monthObj.month() && rDate.year() === monthObj.year();
+    });
+
+    const booksRead = monthReadings.filter(r => r.status === 'completed').length;
+    
+    const pagesRead = monthReadings.reduce((acc, curr) => {
+      const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
+                    ? (parseInt(curr.endPage) || 0) - (parseInt(curr.startPage) || 0)
+                    : (parseInt(curr.pagesRead) || 0);
+      return acc + Math.max(0, delta);
+    }, 0);
+
+    return {
+      name: monthLabel,
+      읽은책: booksRead,
+      페이지: pagesRead
+    };
+  });
+
+  // 취향 장르 분포 동적 계산 (완독된 책 기준)
+  const calculateGenreData = () => {
+    const completedBooksGenreMap = {};
+    
+    // 완독(completed)된 책의 장르만 수집
+    readings.forEach(r => {
+      if (r.status === 'completed') {
+         // booksAtom에서 해당 책 정보 찾기 (우선 isbn으로, 없으면 title로 검색)
+         let bookObj = null;
+         if (r.isbn) {
+           bookObj = books.find(b => b.isbn === r.isbn);
+         }
+         if (!bookObj) {
+           bookObj = books.find(b => b.title === r.bookTitle);
+         }
+         
+         const g = (bookObj && bookObj.genre && bookObj.genre.trim() !== '') ? bookObj.genre : '미분류';
+         // 같은 책의 완독 기록이 여러 번 있을 수도 있으므로 덮어쓰기 형태로 고유하게 유지
+         completedBooksGenreMap[r.bookTitle] = g;
+      }
+    });
+
+    const uniqueGenres = {};
+    Object.values(completedBooksGenreMap).forEach(g => {
+       uniqueGenres[g] = (uniqueGenres[g] || 0) + 1;
+    });
+
+    const totalBooks = Object.keys(completedBooksGenreMap).length;
+    if (totalBooks === 0) return [];
+    
+    return Object.entries(uniqueGenres)
+      .map(([name, count]) => ({
+        name,
+        value: count, // Count is used by Recharts to determine proportion
+        percentage: Math.round((count / totalBooks) * 100)
+      }))
+      .sort((a, b) => b.value - a.value);
+  };
+  
+  const dynamicGenreData = calculateGenreData();
 
   return (
     <div className="animate-in fade-in duration-500">
@@ -33,12 +124,12 @@ const StatsView = () => {
         <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-3xl p-6 md:p-8 text-white relative overflow-hidden shadow-xl shadow-primary-500/20">
           <div className="absolute top-0 right-0 -mr-10 -mt-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
           <div className="relative z-10">
-            <h2 className="text-primary-100 font-medium mb-2 flex items-center gap-2"><Award size={18} /> 상위 10% 다독가</h2>
-            <p className="text-2xl md:text-3xl font-bold mb-4">훌륭합니다! 이번 달 목표인<br className="hidden md:block"/>1000쪽을 향해 순항 중이에요.</p>
+            <h2 className="text-primary-100 font-medium mb-2 flex items-center gap-2"><Award size={18} /> {summary.badge}</h2>
+            <p className="text-2xl md:text-3xl font-bold mb-4" dangerouslySetInnerHTML={{ __html: summary.message.replace('! ', '!<br className="hidden md:block"/>') }}></p>
             <div className="flex gap-4 items-center">
               <div>
-                <p className="text-primary-200 text-xs">현재 달성률</p>
-                <p className="text-2xl font-bold">{stats.goalProgress}%</p>
+                <p className="text-primary-200 text-xs">이번 달 완독</p>
+                <p className="text-2xl font-bold">{stats.booksReadThisMonth}권</p>
               </div>
               <div className="w-px h-8 bg-primary-500/50"></div>
               <div>
@@ -69,34 +160,39 @@ const StatsView = () => {
             <Target size={18} className="text-primary-500"/> 내 취향 장르 분포
           </h3>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={genreData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                  stroke="none"
-                >
-                  {genreData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <RechartsTooltip 
-                  contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
-                  itemStyle={{ color: '#1e293b', fontWeight: 'bold' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+            {dynamicGenreData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={dynamicGenreData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {dynamicGenreData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)' }}
+                    itemStyle={{ color: '#1e293b', fontWeight: 'bold' }}
+                    formatter={(value, name, props) => [`${props.payload.percentage}% (${value}권)`, name]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+               <div className="flex items-center justify-center h-full text-slate-400 text-sm">기록된 장르 데이터가 없습니다.</div>
+            )}
           </div>
           <div className="flex flex-wrap justify-center gap-4 mt-2">
-            {genreData.map((entry, index) => (
+            {dynamicGenreData.map((entry, index) => (
               <div key={entry.name} className="flex items-center gap-1.5 text-xs font-medium text-slate-600">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }}></span>
-                {entry.name} ({entry.value}%)
+                {entry.name} ({entry.percentage}%)
               </div>
             ))}
           </div>

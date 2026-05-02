@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { useAtom, useSetAtom } from 'jotai';
-import { loadReadingsAtom, userAtom, isAuthLoadedAtom } from './store';
+import { loadReadingsAtom, loadBooksAtom, userAtom, isAuthLoadedAtom } from './store';
 import { supabase } from './lib/supabase';
 import Sidebar from './components/Sidebar';
 import StatsWidget from './components/StatsWidget';
@@ -13,6 +13,7 @@ import LoginModal from './components/LoginModal';
 
 function App() {
   const loadReadings = useSetAtom(loadReadingsAtom);
+  const loadBooks = useSetAtom(loadBooksAtom);
   const [user, setUser] = useAtom(userAtom);
   const [isAuthLoaded, setIsAuthLoaded] = useAtom(isAuthLoadedAtom);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -39,9 +40,10 @@ function App() {
   useEffect(() => {
     if (isAuthLoaded) {
       loadReadings();
+      loadBooks();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthLoaded, user?.id, loadReadings]);
+  }, [isAuthLoaded, user?.id, loadReadings, loadBooks]);
 
   const handleOpenModal = (date = new Date(), record = null, endDate = null, initialBook = null) => {
     setSelectedDate(date);

@@ -5,7 +5,8 @@ import 'dayjs/locale/ko';
 dayjs.locale('ko');
 import { useAtomValue, useSetAtom } from 'jotai';
 import { useQuery } from '@tanstack/react-query';
-import { addReadingAtom, updateReadingAtom, deleteReadingAtom, readingsAtom } from '../store';
+import { addReadingAtom, updateReadingAtom, deleteReadingAtom, readingsAtom, loadBooksAtom, booksAtom } from '../store';
+import { supabase } from '../lib/supabase';
 
 // Lib & Components
 import { searchNaverBooks, processBookSelection } from '../lib/bookApi';
@@ -20,6 +21,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
   const updateReading = useSetAtom(updateReadingAtom);
   const deleteReading = useSetAtom(deleteReadingAtom);
   const readings = useAtomValue(readingsAtom);
+  const loadBooks = useSetAtom(loadBooksAtom);
+  const books = useAtomValue(booksAtom);
 
   const [status, setStatus] = useState('reading');
   const [searchType, setSearchType] = useState('kwd');
@@ -37,6 +40,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
   const [endPage, setEndPage] = useState('');
   const [readingTime, setReadingTime] = useState('');
   const [memo, setMemo] = useState('');
+  const [genre, setGenre] = useState('');
 
   const recentBooks = [];
   const seen = new Set();
@@ -76,12 +80,21 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
           title: initialRecord.bookTitle,
           author: initialRecord.author,
           coverUrl: initialRecord.coverUrl,
-          pageCount: initialRecord.totalPages
+          pageCount: initialRecord.totalPages,
+          isbn: initialRecord.isbn || ''
         });
         setStartPage(initialRecord.startPage !== undefined && initialRecord.startPage !== null ? initialRecord.startPage.toString() : '');
         setEndPage(initialRecord.endPage !== undefined && initialRecord.endPage !== null ? initialRecord.endPage.toString() : initialRecord.pagesRead ? initialRecord.pagesRead.toString() : '');
         setReadingTime(initialRecord.readingTime ? initialRecord.readingTime.toString() : '');
         setMemo(initialRecord.memo || '');
+        
+        let savedGenre = '';
+        if (initialRecord.isbn) {
+           const bookObj = books.find(b => b.isbn === initialRecord.isbn);
+           if (bookObj && bookObj.genre) savedGenre = bookObj.genre;
+        }
+        setGenre(savedGenre);
+        
         setRecordDate(initialRecord.date);
         setRecordEndDate(initialRecord.date);
         setIsMultiDay(false);
@@ -102,6 +115,13 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
         setEndPage('');
         setReadingTime('');
         setMemo('');
+        
+        let savedGenre = '';
+        if (initialBook && initialBook.isbn) {
+           const bookObj = books.find(b => b.isbn === initialBook.isbn);
+           if (bookObj && bookObj.genre) savedGenre = bookObj.genre;
+        }
+        setGenre(savedGenre);
         
         const d = initialDate ? dayjs(initialDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD');
         const endD = initialEndDate ? dayjs(initialEndDate).format('YYYY-MM-DD') : d;
@@ -140,6 +160,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
 
     setSearchQuery('');
     setSelectedBook(finalBook);
+    setGenre(finalBook.genre || '');
     
     const accumulated = getAccumulatedPages(finalBook.title);
     setStartPage(accumulated > 0 ? accumulated.toString() : '');
@@ -154,7 +175,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedBook) {
       alert("책을 선택해주세요.");
       return;
@@ -164,12 +185,23 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     const ePage = parseInt(endPage) || 0;
     const pagesReadAmount = ePage > sPage ? ePage - sPage : ePage;
 
+    // 장르를 books 테이블에 업데이트 (또는 저장)
+    if (selectedBook.isbn && genre) {
+      const { error } = await supabase.from('books').update({ genre }).eq('isbn', selectedBook.isbn);
+      if (!error) {
+         loadBooks(); // 상태 동기화
+      } else {
+         console.warn('Failed to update genre in books table', error);
+      }
+    }
+
     if (initialRecord) {
       updateReading({
         id: initialRecord.id,
         bookTitle: selectedBook.title,
         author: selectedBook.author,
         coverUrl: selectedBook.coverUrl,
+        isbn: selectedBook.isbn || '',
         date: recordDate,
         startPage: sPage,
         endPage: ePage,
@@ -207,6 +239,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
           bookTitle: selectedBook.title,
           author: selectedBook.author,
           coverUrl: selectedBook.coverUrl,
+          isbn: selectedBook.isbn || '',
           date: d,
           startPage: currentStart,
           endPage: currentEnd,
@@ -291,6 +324,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
               memo={memo} setMemo={setMemo}
               status={status} setStatus={setStatus}
               totalPages={selectedBook?.pageCount}
+              genre={genre} setGenre={setGenre}
             />
           </div>
 

@@ -13,6 +13,8 @@ const RecordFormFields = ({
   status,
   setStatus,
   totalPages,
+  genre,
+  setGenre,
 }) => {
   return (
     <div className="space-y-6">
@@ -63,6 +65,29 @@ const RecordFormFields = ({
             <span className="text-slate-600 font-medium whitespace-nowrap">분</span>
           </div>
         </div>
+      </div>
+
+      {/* Genre Selection */}
+      <div>
+        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
+          <Book size={16} className="text-slate-400" /> 도서 장르
+        </label>
+        <select
+          value={genre}
+          onChange={(e) => setGenre(e.target.value)}
+          className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none appearance-none"
+        >
+          <option value="" disabled>장르를 선택해주세요 (선택)</option>
+          <option value="소설">소설</option>
+          <option value="시/에세이">시/에세이</option>
+          <option value="인문/교양">인문/교양</option>
+          <option value="경제/경영">경제/경영</option>
+          <option value="자기계발">자기계발</option>
+          <option value="역사">역사</option>
+          <option value="과학/IT">과학/IT</option>
+          <option value="만화">만화</option>
+          <option value="기타">기타</option>
+        </select>
       </div>
 
       {/* Review / Memo */}

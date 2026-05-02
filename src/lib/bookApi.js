@@ -69,6 +69,7 @@ export const processBookSelection = async (book) => {
         author: cachedBook.author || finalBook.author,
         coverUrl: cachedBook.cover_url || finalBook.coverUrl,
         pageCount: cachedBook.total_pages > 0 ? cachedBook.total_pages : finalBook.pageCount,
+        genre: cachedBook.genre || '',
       };
     }
 

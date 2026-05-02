@@ -7,6 +7,8 @@ import { mockReadings, mockStats } from './mockData';
 export const readingsAtom = atom([]);
 export const isReadingsLoadedAtom = atom(false);
 
+export const booksAtom = atom([]);
+
 // Auth 상태
 export const userAtom = atom(null);
 export const isAuthLoadedAtom = atom(false);
@@ -35,6 +37,14 @@ export const loadReadingsAtom = atom(null, async (get, set) => {
   set(isReadingsLoadedAtom, true);
 });
 
+export const loadBooksAtom = atom(null, async (get, set) => {
+  const { data, error } = await supabase.from('books').select('*');
+  if (data) {
+    set(booksAtom, data);
+  } else if (error) {
+    console.warn('Failed to load books from Supabase', error);
+  }
+});
 
 // 기록 추가 액션 atom
 export const addReadingAtom = atom(
@@ -127,7 +137,6 @@ export const statsAtom = atom((get) => {
                   : (parseInt(curr.pagesRead) || 0);
     return acc + Math.max(0, delta);
   }, 0);
-  const goalProgress = Math.min(Math.round((totalPagesRead / 1000) * 100), 100);
   // 연속 기록 및 최고 기록 계산
   const uniqueDates = [...new Set(readings.map(r => dayjs(r.date).format('YYYY-MM-DD')))].sort((a, b) => dayjs(b).diff(dayjs(a)));
   
@@ -172,7 +181,6 @@ export const statsAtom = atom((get) => {
   return {
     booksReadThisMonth,
     totalPagesRead,
-    goalProgress,
     currentStreak,
     maxStreak,
   };

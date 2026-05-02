@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookMarked, TrendingUp, Target, Flame } from 'lucide-react';
+import { BookMarked, TrendingUp, Flame } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { statsAtom } from '../store';
 
@@ -22,7 +22,7 @@ const StatsWidget = () => {
   const stats = useAtomValue(statsAtom);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <StatCard 
         title="이번 달 완독" 
         value={`${stats.booksReadThisMonth}권`}
@@ -33,16 +33,9 @@ const StatsWidget = () => {
       <StatCard 
         title="총 읽은 페이지" 
         value={`${stats.totalPagesRead}p`}
-        subtitle="목표 1,000p"
+        subtitle="꾸준히 읽고 있어요!"
         icon={TrendingUp}
         gradientClass="from-emerald-400 to-emerald-500"
-      />
-      <StatCard 
-        title="목표 달성률" 
-        value={`${stats.goalProgress}%`}
-        subtitle="아주 잘하고 있어요!"
-        icon={Target}
-        gradientClass="from-violet-500 to-purple-600"
       />
       <StatCard 
         title="연속 독서" 
