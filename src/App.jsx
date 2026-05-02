@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAtom, useSetAtom } from 'jotai';
 import { loadReadingsAtom, loadBooksAtom, userAtom, isAuthLoadedAtom } from './store';
 import { supabase } from './lib/supabase';
@@ -10,6 +10,8 @@ import RecordModal from './components/RecordModal';
 import LibraryView from './components/LibraryView';
 import StatsView from './components/StatsView';
 import LoginModal from './components/LoginModal';
+import PrivacyPolicy from './components/legal/PrivacyPolicy';
+import TermsOfService from './components/legal/TermsOfService';
 
 function App() {
   const loadReadings = useSetAtom(loadReadingsAtom);
@@ -22,6 +24,9 @@ function App() {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedBook, setSelectedBookState] = useState(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  const isPublicRoute = ['/privacy', '/terms'].includes(location.pathname);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -72,7 +77,7 @@ function App() {
   
   return (
     <div className="flex min-h-screen bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
-      {!user && <LoginModal />}
+      {!user && !isPublicRoute && <LoginModal />}
       <Sidebar />
       
       <main className="flex-1 min-w-0 md:ml-64 p-4 sm:p-6 lg:p-10 transition-all">
@@ -139,6 +144,8 @@ function App() {
             } />
             <Route path="/library" element={<LibraryView onOpenModal={handleOpenModal} />} />
             <Route path="/stats" element={<StatsView />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
           </Routes>
 
         </div>

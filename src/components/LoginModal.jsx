@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 
 const LoginModal = () => {
@@ -76,7 +77,7 @@ const LoginModal = () => {
         </div>
         
         <div className="mt-8 text-xs text-slate-400">
-          로그인 시 서비스 이용약관 및 개인정보 처리방침에 동의하게 됩니다.
+          로그인 시 <Link to="/terms" className="underline hover:text-slate-600">서비스 이용약관</Link> 및 <Link to="/privacy" className="underline hover:text-slate-600">개인정보 처리방침</Link>에 동의하게 됩니다.
         </div>
       </div>
     </div>

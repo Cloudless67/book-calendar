@@ -1,11 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
-import { statsAtom } from '../store';
+import { statsAtom, userAtom } from '../store';
 import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame } from 'lucide-react';
 
 const Sidebar = () => {
   const stats = useAtomValue(statsAtom);
+  const user = useAtomValue(userAtom);
 
   const menuItems = [
     { path: '/', icon: <Calendar size={20} />, label: '달력' },
@@ -22,16 +23,18 @@ const Sidebar = () => {
         </h1>
       </div>
 
-      <div className="hidden md:block mb-8 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 bg-orange-200 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
-        <div className="flex items-center gap-3 mb-2">
-          <Flame className="text-orange-500" size={20} />
-          <span className="font-semibold text-slate-800">{stats.currentStreak}일 연속 독서!</span>
+      {user && (
+        <div className="hidden md:block mb-8 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 bg-orange-200 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
+          <div className="flex items-center gap-3 mb-2">
+            <Flame className="text-orange-500" size={20} />
+            <span className="font-semibold text-slate-800">{stats.currentStreak}일 연속 독서!</span>
+          </div>
+          <p className="text-xs text-slate-500">
+            {stats.currentStreak > 0 ? "매일매일 꾸준히 읽는 모습이 멋져요!" : "오늘부터 다시 시작해볼까요?"}
+          </p>
         </div>
-        <p className="text-xs text-slate-500">
-          {stats.currentStreak > 0 ? "매일매일 꾸준히 읽는 모습이 멋져요!" : "오늘부터 다시 시작해볼까요?"}
-        </p>
-      </div>
+      )}
 
       <nav className="flex-1 flex flex-row md:flex-col justify-around md:justify-start px-2 py-1 md:p-0 space-x-1 md:space-x-0 md:space-y-2">
         {menuItems.map((item) => (
@@ -57,14 +60,28 @@ const Sidebar = () => {
       </nav>
 
       <div className="hidden md:block border-t border-slate-100 pt-6 space-y-2">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors">
-          <Settings size={20} />
-          <span>설정</span>
-        </button>
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors">
-          <LogOut size={20} />
-          <span>로그아웃</span>
-        </button>
+        {user ? (
+          <>
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors">
+              <Settings size={20} />
+              <span>설정</span>
+            </button>
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors">
+              <LogOut size={20} />
+              <span>로그아웃</span>
+            </button>
+          </>
+        ) : (
+          <NavLink to="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-600 bg-primary-50 font-medium transition-colors">
+            <LogOut size={20} className="rotate-180" />
+            <span>로그인하기</span>
+          </NavLink>
+        )}
+        
+        <div className="pt-4 flex flex-wrap gap-x-3 gap-y-1 px-4">
+          <NavLink to="/privacy" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">개인정보 처리방침</NavLink>
+          <NavLink to="/terms" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">이용약관</NavLink>
+        </div>
       </div>
     </aside>
   );
