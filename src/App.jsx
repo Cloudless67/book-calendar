@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { currentViewAtom, loadReadingsAtom, userAtom, isAuthLoadedAtom } from './store';
+import { Routes, Route } from 'react-router-dom';
+import { useAtom, useSetAtom } from 'jotai';
+import { loadReadingsAtom, userAtom, isAuthLoadedAtom } from './store';
 import { supabase } from './lib/supabase';
 import Sidebar from './components/Sidebar';
 import StatsWidget from './components/StatsWidget';
@@ -11,7 +12,6 @@ import StatsView from './components/StatsView';
 import LoginModal from './components/LoginModal';
 
 function App() {
-  const currentView = useAtomValue(currentViewAtom);
   const loadReadings = useSetAtom(loadReadingsAtom);
   const [user, setUser] = useAtom(userAtom);
   const [isAuthLoaded, setIsAuthLoaded] = useAtom(isAuthLoadedAtom);
@@ -118,25 +118,26 @@ function App() {
             </div>
           </div>
 
-          {currentView === 'calendar' && (
-            <div className="animate-in fade-in duration-500">
-              <header className="mb-8 flex justify-between items-end">
-                <div>
-                  <p className="text-sm font-medium text-primary-600 mb-1">어제보다 더 성장하는 오늘</p>
-                  <h1 className="text-3xl font-bold text-slate-800">나의 독서 대시보드</h1>
+          <Routes>
+            <Route path="/" element={
+              <div className="animate-in fade-in duration-500">
+                <header className="mb-8 flex justify-between items-end">
+                  <div>
+                    <p className="text-sm font-medium text-primary-600 mb-1">어제보다 더 성장하는 오늘</p>
+                    <h1 className="text-3xl font-bold text-slate-800">나의 독서 대시보드</h1>
+                  </div>
+                </header>
+
+                <StatsWidget />
+                
+                <div className="h-auto">
+                  <CalendarWidget onOpenModal={handleOpenModal} />
                 </div>
-              </header>
-
-              <StatsWidget />
-              
-              <div className="h-auto">
-                <CalendarWidget onOpenModal={handleOpenModal} />
               </div>
-            </div>
-          )}
-
-          {currentView === 'library' && <LibraryView onOpenModal={handleOpenModal} />}
-          {currentView === 'stats' && <StatsView />}
+            } />
+            <Route path="/library" element={<LibraryView onOpenModal={handleOpenModal} />} />
+            <Route path="/stats" element={<StatsView />} />
+          </Routes>
 
         </div>
       </main>

@@ -34,8 +34,6 @@ export const loadReadingsAtom = atom(null, async (get, set) => {
   set(isReadingsLoadedAtom, true);
 });
 
-// 현재 선택된 메뉴 뷰 ('calendar', 'library', 'stats')
-export const currentViewAtom = atom('calendar');
 
 // 기록 추가 액션 atom
 export const addReadingAtom = atom(

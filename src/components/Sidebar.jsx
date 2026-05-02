@@ -1,15 +1,12 @@
 import React from 'react';
-import { useAtom } from 'jotai';
-import { currentViewAtom } from '../store';
+import { NavLink } from 'react-router-dom';
 import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame } from 'lucide-react';
 
 const Sidebar = () => {
-  const [currentView, setCurrentView] = useAtom(currentViewAtom);
-
   const menuItems = [
-    { id: 'calendar', icon: <Calendar size={20} />, label: '달력' },
-    { id: 'library', icon: <BookOpen size={20} />, label: '내 서재' },
-    { id: 'stats', icon: <PieChart size={20} />, label: '통계' },
+    { path: '/', icon: <Calendar size={20} />, label: '달력' },
+    { path: '/library', icon: <BookOpen size={20} />, label: '내 서재' },
+    { path: '/stats', icon: <PieChart size={20} />, label: '통계' },
   ];
 
   return (
@@ -31,25 +28,26 @@ const Sidebar = () => {
       </div>
 
       <nav className="flex-1 flex flex-row md:flex-col justify-around md:justify-start px-2 py-1 md:p-0 space-x-1 md:space-x-0 md:space-y-2">
-        {menuItems.map((item) => {
-          const isActive = currentView === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => setCurrentView(item.id)}
-              className={`flex-1 md:flex-none md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-xl transition-all duration-300 ${
-                isActive 
-                  ? 'text-primary-700 font-medium' 
-                  : 'text-slate-400 md:text-slate-500 hover:bg-slate-50 hover:text-slate-900'
-              } ${isActive ? 'md:bg-primary-50' : 'bg-transparent'}`}
-            >
-              <div className={isActive ? 'scale-110 transition-transform text-primary-600' : ''}>
-                {item.icon}
-              </div>
-              <span className="text-[10px] md:text-base">{item.label}</span>
-            </button>
-          );
-        })}
+        {menuItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `flex-1 md:flex-none md:w-full flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-3 px-2 md:px-4 py-1.5 md:py-3 rounded-xl transition-all duration-300 ${
+              isActive 
+                ? 'text-primary-700 font-medium md:bg-primary-50' 
+                : 'text-slate-400 md:text-slate-500 hover:bg-slate-50 hover:text-slate-900 bg-transparent'
+            }`}
+          >
+            {({ isActive }) => (
+              <>
+                <div className={isActive ? 'scale-110 transition-transform text-primary-600' : ''}>
+                  {item.icon}
+                </div>
+                <span className="text-[10px] md:text-base">{item.label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="hidden md:block border-t border-slate-100 pt-6 space-y-2">
