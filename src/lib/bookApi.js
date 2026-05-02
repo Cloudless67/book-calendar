@@ -1,9 +1,5 @@
 import { supabase } from './supabase';
 
-const NAVER_CLIENT_ID = import.meta.env.VITE_NAVER_CLIENT_ID;
-const NAVER_CLIENT_SECRET = import.meta.env.VITE_NAVER_CLIENT_SECRET;
-const SEOJI_API_KEY = import.meta.env.VITE_SEOJI_API_KEY;
-
 /**
  * 네이버 도서 검색 API 호출
  */
@@ -16,23 +12,15 @@ export const searchNaverBooks = async (searchType, debouncedQuery, searchPage) =
     sort: 'sim',
   });
 
-  let endpoint = '/naver-api/v1/search/book.json';
-
   if (searchType === 'kwd') {
     searchParams.append('query', debouncedQuery);
   } else {
-    endpoint = '/naver-api/v1/search/book_adv.json';
     if (searchType === 'title') searchParams.append('d_titl', debouncedQuery);
     if (searchType === 'author') searchParams.append('d_auth', debouncedQuery);
     if (searchType === 'isbn') searchParams.append('d_isbn', debouncedQuery);
   }
 
-  const res = await fetch(`${endpoint}?${searchParams.toString()}`, {
-    headers: {
-      'X-Naver-Client-Id': NAVER_CLIENT_ID || '',
-      'X-Naver-Client-Secret': NAVER_CLIENT_SECRET || '',
-    },
-  });
+  const res = await fetch(`/api/naver-search?${searchParams.toString()}`);
 
   if (!res.ok) throw new Error(`Naver API error: ${res.status}`);
 
@@ -86,15 +74,7 @@ export const processBookSelection = async (book) => {
     }
 
     // 2. 캐시 데이터가 없으면 국립중앙도서관(서지) API 호출
-    const searchParams = new URLSearchParams({
-      cert_key: SEOJI_API_KEY,
-      result_style: 'json',
-      page_no: 1,
-      page_size: 10,
-      isbn: cleanIsbn,
-    });
-
-    const res = await fetch(`/nl-api/seoji/SearchApi.do?${searchParams.toString()}`);
+    const res = await fetch(`/api/seoji-search?isbn=${cleanIsbn}`);
 
     if (res.ok) {
       const data = await res.json();
@@ -112,7 +92,7 @@ export const processBookSelection = async (book) => {
     let supabaseImageUrl = finalBook.coverUrl;
     if (finalBook.coverUrl && finalBook.coverUrl.includes('pstatic.net')) {
       try {
-        const imgRes = await fetch(`/image-proxy?url=${encodeURIComponent(finalBook.coverUrl)}`);
+        const imgRes = await fetch(`/api/image-proxy?url=${encodeURIComponent(finalBook.coverUrl)}`);
         const imgBlob = await imgRes.blob();
         const fileExt = imgBlob.type.split('/')[1] || 'jpg';
         const fileName = `${cleanIsbn}.${fileExt}`;
