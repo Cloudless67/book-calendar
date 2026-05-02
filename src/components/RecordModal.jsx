@@ -290,6 +290,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
               readingTime={readingTime} setReadingTime={setReadingTime}
               memo={memo} setMemo={setMemo}
               status={status} setStatus={setStatus}
+              totalPages={selectedBook?.pageCount}
             />
           </div>
 

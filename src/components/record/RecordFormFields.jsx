@@ -12,14 +12,20 @@ const RecordFormFields = ({
   setMemo,
   status,
   setStatus,
+  totalPages,
 }) => {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Pages Read */}
         <div>
-          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-            <Book size={16} className="text-slate-400" /> 페이지 기록
+          <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Book size={16} className="text-slate-400" /> 페이지 기록
+            </span>
+            {totalPages > 0 && (
+              <span className="text-xs font-normal text-slate-400">전체 {totalPages}쪽</span>
+            )}
           </label>
           <div className="flex items-center gap-2">
             <input

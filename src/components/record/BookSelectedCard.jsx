@@ -15,7 +15,15 @@ const BookSelectedCard = ({ selectedBook, onReselect }) => {
         </div>
         <div className="flex-1">
           <p className="text-sm font-bold text-slate-800 line-clamp-1">{selectedBook.title}</p>
-          <p className="text-xs text-slate-500">{selectedBook.author}</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-xs text-slate-500">{selectedBook.author}</p>
+            {selectedBook.pageCount > 0 && (
+              <>
+                <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
+                <p className="text-xs font-medium text-primary-600">총 {selectedBook.pageCount}쪽</p>
+              </>
+            )}
+          </div>
         </div>
       </div>
       <button
