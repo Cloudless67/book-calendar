@@ -18,6 +18,7 @@ function App() {
   const loadBooks = useSetAtom(loadBooksAtom);
   const [user, setUser] = useAtom(userAtom);
   const [isAuthLoaded, setIsAuthLoaded] = useAtom(isAuthLoadedAtom);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEndDate, setSelectedEndDate] = useState(null);
@@ -77,15 +78,15 @@ function App() {
   
   return (
     <div className="flex min-h-screen bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
-      {!user && !isPublicRoute && <LoginModal />}
-      <Sidebar />
+      {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} />}
+      <Sidebar onOpenLoginModal={() => setIsLoginModalOpen(true)} />
       
       <main className="flex-1 min-w-0 md:ml-64 p-4 sm:p-6 lg:p-10 transition-all">
         <div className="max-w-6xl mx-auto">
           {/* 우측 상단 유저 프로필 영역 (공통) */}
           <div className="flex justify-end mb-4">
             <div className="flex items-center gap-4">
-              {user && (
+              {user ? (
                 <div className="relative">
                   <div className="flex items-center gap-4">
                     <span className="text-sm font-medium text-slate-700 hidden sm:block">
@@ -121,6 +122,13 @@ function App() {
                     </>
                   )}
                 </div>
+              ) : (
+                <button
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-5 py-2 text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 rounded-xl transition-colors shadow-sm"
+                >
+                  로그인
+                </button>
               )}
             </div>
           </div>

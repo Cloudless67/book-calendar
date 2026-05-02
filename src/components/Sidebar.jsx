@@ -4,7 +4,7 @@ import { useAtomValue } from 'jotai';
 import { statsAtom, userAtom } from '../store';
 import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ onOpenLoginModal }) => {
   const stats = useAtomValue(statsAtom);
   const user = useAtomValue(userAtom);
 
@@ -72,10 +72,10 @@ const Sidebar = () => {
             </button>
           </>
         ) : (
-          <NavLink to="/" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-600 bg-primary-50 font-medium transition-colors">
+          <button onClick={onOpenLoginModal} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-600 bg-primary-50 hover:bg-primary-100 font-medium transition-colors">
             <LogOut size={20} className="rotate-180" />
             <span>로그인하기</span>
-          </NavLink>
+          </button>
         )}
         
         <div className="pt-4 flex flex-wrap gap-x-3 gap-y-1 px-4">
