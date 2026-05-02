@@ -66,7 +66,7 @@ function App() {
   if (!isAuthLoaded) {
     return <div className="flex min-h-screen bg-slate-50/50 items-center justify-center"></div>;
   }
-
+  
   return (
     <div className="flex min-h-screen bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
       {!user && <LoginModal />}
@@ -81,14 +81,14 @@ function App() {
                 <div className="relative">
                   <div className="flex items-center gap-4">
                     <span className="text-sm font-medium text-slate-700 hidden sm:block">
-                      {user.user_metadata?.name || user.email?.split('@')[0] || 'User'}
+                      {user.user_metadata?.name || user.email?.split('@')[0] || user.user_metadata?.nickname}
                     </span>
                     <div 
                       className="w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md cursor-pointer hover:opacity-80 transition-opacity"
                       onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                     >
                       <img 
-                        src={user.user_metadata?.avatar_url || `https://ui-avatars.com/api/?name=${user.email || 'User'}&background=6366F1&color=fff`} 
+                        src={user.user_metadata?.avatar_url || user.user_metadata?.picture || `https://ui-avatars.com/api/?name=${user.email || 'User'}&background=6366F1&color=fff`} 
                         alt="User Profile" 
                         className="w-full h-full object-cover"
                       />
