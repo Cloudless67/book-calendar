@@ -40,7 +40,8 @@ function App() {
     if (isAuthLoaded) {
       loadReadings();
     }
-  }, [isAuthLoaded, user, loadReadings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthLoaded, user?.id, loadReadings]);
 
   const handleOpenModal = (date = new Date(), record = null, endDate = null, initialBook = null) => {
     setSelectedDate(date);

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Quote, Save, Plus, Trash2, Star } from 'lucide-react';
-import { useSetAtom } from 'jotai';
-import { updateReadingAtom, deleteReadingAtom } from '../store';
+import { useSetAtom, useAtomValue } from 'jotai';
+import { updateReadingAtom, deleteReadingAtom, readingsAtom } from '../store';
 import dayjs from 'dayjs';
 
 const LibraryDetailModal = ({ isOpen, onClose, record, onContinueRecording }) => {
   const updateReading = useSetAtom(updateReadingAtom);
   const deleteReading = useSetAtom(deleteReadingAtom);
+  const readings = useAtomValue(readingsAtom);
   
   const [memo, setMemo] = useState('');
   const [quotes, setQuotes] = useState([]);
@@ -27,8 +28,9 @@ const LibraryDetailModal = ({ isOpen, onClose, record, onContinueRecording }) =>
   if (!isOpen || !record) return null;
 
   const handleSave = () => {
+    const originalRecord = readings.find(r => r.id === record.id);
     const updatedRecord = {
-      ...record,
+      ...(originalRecord || record),
       memo,
       quotes,
       rating

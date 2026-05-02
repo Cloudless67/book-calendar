@@ -143,7 +143,7 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     
     const accumulated = getAccumulatedPages(finalBook.title);
     setStartPage(accumulated > 0 ? accumulated.toString() : '');
-    setEndPage(accumulated === 0 && finalBook.pageCount ? finalBook.pageCount.toString() : '');
+    setEndPage('');
     setIsProcessingSelection(false);
   };
 
