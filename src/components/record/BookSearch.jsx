@@ -18,7 +18,6 @@ const BookSearch = ({
   const searchTypes = [
     { id: 'kwd', label: '전체' },
     { id: 'title', label: '제목' },
-    { id: 'author', label: '저자' },
     { id: 'isbn', label: 'ISBN' },
   ];
 

@@ -16,7 +16,6 @@ export const searchNaverBooks = async (searchType, debouncedQuery, searchPage) =
     searchParams.append('query', debouncedQuery);
   } else {
     if (searchType === 'title') searchParams.append('d_titl', debouncedQuery);
-    if (searchType === 'author') searchParams.append('d_auth', debouncedQuery);
     if (searchType === 'isbn') searchParams.append('d_isbn', debouncedQuery);
   }
 
