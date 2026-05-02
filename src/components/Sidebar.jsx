@@ -1,8 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAtomValue } from 'jotai';
+import { statsAtom } from '../store';
 import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame } from 'lucide-react';
 
 const Sidebar = () => {
+  const stats = useAtomValue(statsAtom);
+
   const menuItems = [
     { path: '/', icon: <Calendar size={20} />, label: '달력' },
     { path: '/library', icon: <BookOpen size={20} />, label: '내 서재' },
@@ -22,9 +26,11 @@ const Sidebar = () => {
         <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 bg-orange-200 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
         <div className="flex items-center gap-3 mb-2">
           <Flame className="text-orange-500" size={20} />
-          <span className="font-semibold text-slate-800">5일 연속 독서!</span>
+          <span className="font-semibold text-slate-800">{stats.currentStreak}일 연속 독서!</span>
         </div>
-        <p className="text-xs text-slate-500">목표 달성까지 하루 남았어요. 오늘도 파이팅!</p>
+        <p className="text-xs text-slate-500">
+          {stats.currentStreak > 0 ? "매일매일 꾸준히 읽는 모습이 멋져요!" : "오늘부터 다시 시작해볼까요?"}
+        </p>
       </div>
 
       <nav className="flex-1 flex flex-row md:flex-col justify-around md:justify-start px-2 py-1 md:p-0 space-x-1 md:space-x-0 md:space-y-2">

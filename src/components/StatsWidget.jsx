@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookMarked, TrendingUp, Target, Clock } from 'lucide-react';
+import { BookMarked, TrendingUp, Target, Flame } from 'lucide-react';
 import { useAtomValue } from 'jotai';
 import { statsAtom } from '../store';
 
@@ -47,8 +47,8 @@ const StatsWidget = () => {
       <StatCard 
         title="연속 독서" 
         value={`${stats.currentStreak}일`}
-        subtitle="최고 기록: 12일"
-        icon={Clock}
+        subtitle={`최고 기록: ${stats.maxStreak || 0}일`}
+        icon={Flame}
         gradientClass="from-orange-400 to-rose-500"
       />
     </div>

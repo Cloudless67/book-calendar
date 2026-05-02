@@ -1,4 +1,5 @@
 import { atom } from 'jotai';
+import dayjs from 'dayjs';
 import { supabase } from './lib/supabase';
 import { mockReadings, mockStats } from './mockData';
 
@@ -127,11 +128,52 @@ export const statsAtom = atom((get) => {
     return acc + Math.max(0, delta);
   }, 0);
   const goalProgress = Math.min(Math.round((totalPagesRead / 1000) * 100), 100);
+  // 연속 기록 및 최고 기록 계산
+  const uniqueDates = [...new Set(readings.map(r => dayjs(r.date).format('YYYY-MM-DD')))].sort((a, b) => dayjs(b).diff(dayjs(a)));
+  
+  let currentStreak = 0;
+  let maxStreak = 0;
+  
+  if (uniqueDates.length > 0) {
+    const todayStr = dayjs().format('YYYY-MM-DD');
+    const yesterdayStr = dayjs().subtract(1, 'day').format('YYYY-MM-DD');
+    
+    // Calculate current streak
+    if (uniqueDates[0] === todayStr || uniqueDates[0] === yesterdayStr) {
+      currentStreak = 1;
+      let currentDate = dayjs(uniqueDates[0]);
+      
+      for (let i = 1; i < uniqueDates.length; i++) {
+        const expectedDateStr = currentDate.subtract(1, 'day').format('YYYY-MM-DD');
+        if (uniqueDates[i] === expectedDateStr) {
+          currentStreak++;
+          currentDate = currentDate.subtract(1, 'day');
+        } else {
+          break;
+        }
+      }
+    }
+
+    // Calculate max streak
+    let tempStreak = 1;
+    maxStreak = 1;
+    for (let i = 0; i < uniqueDates.length - 1; i++) {
+      const curr = dayjs(uniqueDates[i]);
+      const next = dayjs(uniqueDates[i + 1]);
+      if (curr.subtract(1, 'day').format('YYYY-MM-DD') === next.format('YYYY-MM-DD')) {
+        tempStreak++;
+        maxStreak = Math.max(maxStreak, tempStreak);
+      } else {
+        tempStreak = 1;
+      }
+    }
+  }
   
   return {
     booksReadThisMonth,
     totalPagesRead,
     goalProgress,
-    currentStreak: mockStats.currentStreak, // Streak 로직은 일단 기존 mock값 유지
+    currentStreak,
+    maxStreak,
   };
 });
