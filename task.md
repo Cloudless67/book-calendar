@@ -134,3 +134,9 @@
   - `RecordFormFields`: 페이지, 시간, 메모, 상태 입력 UI.
 
 *추후 고도화할 목표 혹은 TODO가 있다면 본 문서의 하단에 덧붙이고 이어서 진행할 수 있습니다.*
+
+## 14. PWA(Progressive Web App) 지원 추가
+- **`vite-plugin-pwa` 도입**: 빌드 시 Web Manifest 및 Service Worker를 자동 생성하여 PWA 환경 구축.
+- **아이콘 및 에셋 추가**: 기존 서비스 로고(`booklog.png`)를 활용하여 PWA 필수 아이콘(192x192, 512x512) 및 iOS용 `apple-touch-icon`(180x180) 생성 후 `public` 폴더에 적재.
+- **메타 태그 및 모바일 뷰포트 최적화**: 모바일 기기에서 네이티브 앱처럼 자연스럽게 보이도록 핀치 줌 방지(`viewport`) 속성을 수정하고, 주소창 테마 색상(`theme-color`)을 `index.html`에 명시.
+- **백그라운드 자동 업데이트**: Service Worker의 `registerType`을 `autoUpdate`로 지정하여 캐싱된 리소스가 갱신될 때 사용자 측에서 자동으로 업데이트를 적용받도록 구현.
