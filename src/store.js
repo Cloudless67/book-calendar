@@ -128,8 +128,10 @@ export const deleteReadingAtom = atom(
 export const statsAtom = atom((get) => {
   const readings = get(readingsAtom);
   
-  // 이번달 통계 등을 실제로는 날짜 기반으로 계산해야 하지만 일단 단순화
-  const booksReadThisMonth = readings.filter(r => r.status === 'completed').length;
+  const currentMonth = dayjs().format('YYYY-MM');
+  const booksReadThisMonth = readings.filter(r => 
+    r.status === 'completed' && dayjs(r.date).format('YYYY-MM') === currentMonth
+  ).length;
   // 임시 목표치 1000
   const totalPagesRead = readings.reduce((acc, curr) => {
     const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
