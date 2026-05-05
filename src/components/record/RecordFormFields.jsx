@@ -64,6 +64,9 @@ const RecordFormFields = ({
             />
             <span className="text-slate-600 font-medium whitespace-nowrap">쪽</span>
           </div>
+          {startPage !== '' && endPage !== '' && parseInt(startPage) > parseInt(endPage) && (
+            <p className="text-xs text-rose-500 mt-2 font-medium ml-1">끝 페이지는 시작 페이지보다 크거나 같아야 합니다.</p>
+          )}
         </div>
 
         {/* Reading Time */}
