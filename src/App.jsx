@@ -73,11 +73,11 @@ function App() {
   };
 
   if (!isAuthLoaded) {
-    return <div className="flex min-h-screen bg-slate-50/50 items-center justify-center"></div>;
+    return <div className="flex min-h-dvh bg-slate-50/50 items-center justify-center"></div>;
   }
   
   return (
-    <div className="flex min-h-screen bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
+    <div className="flex min-h-dvh bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
       {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} />}
       <Sidebar onOpenLoginModal={() => setIsLoginModalOpen(true)} />
       
