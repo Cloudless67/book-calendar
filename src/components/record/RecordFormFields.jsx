@@ -1,5 +1,6 @@
 import React from 'react';
 import { Book, Clock, Edit3, CheckCircle2, Circle } from 'lucide-react';
+import { NumericFormat } from 'react-number-format';
 
 const RecordFormFields = ({
   startPage,
@@ -30,20 +31,36 @@ const RecordFormFields = ({
             )}
           </label>
           <div className="flex items-center gap-2">
-            <input
-              type="number"
+            <NumericFormat
               placeholder="시작"
               value={startPage}
-              onChange={(e) => setStartPage(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              onValueChange={(values) => setStartPage(values.value)}
+              isAllowed={(values) => {
+                const { floatValue } = values;
+                if (floatValue === undefined) return true;
+                if (floatValue < 0) return false;
+                if (totalPages && floatValue > totalPages) return false;
+                return true;
+              }}
+              allowNegative={false}
+              decimalScale={0}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none focus:placeholder-transparent transition-all"
             />
             <span className="text-slate-400">~</span>
-            <input
-              type="number"
+            <NumericFormat
               placeholder="끝"
               value={endPage}
-              onChange={(e) => setEndPage(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              onValueChange={(values) => setEndPage(values.value)}
+              isAllowed={(values) => {
+                const { floatValue } = values;
+                if (floatValue === undefined) return true;
+                if (floatValue < 0) return false;
+                if (totalPages && floatValue > totalPages) return false;
+                return true;
+              }}
+              allowNegative={false}
+              decimalScale={0}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none focus:placeholder-transparent transition-all"
             />
             <span className="text-slate-600 font-medium whitespace-nowrap">쪽</span>
           </div>
@@ -55,12 +72,13 @@ const RecordFormFields = ({
             <Clock size={16} className="text-slate-400" /> 독서 시간
           </label>
           <div className="flex items-center gap-2">
-            <input
-              type="number"
+            <NumericFormat
               placeholder="예: 45"
               value={readingTime}
-              onChange={(e) => setReadingTime(e.target.value)}
-              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none"
+              onValueChange={(values) => setReadingTime(values.value)}
+              allowNegative={false}
+              decimalScale={0}
+              className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-center focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none focus:placeholder-transparent transition-all"
             />
             <span className="text-slate-600 font-medium whitespace-nowrap">분</span>
           </div>

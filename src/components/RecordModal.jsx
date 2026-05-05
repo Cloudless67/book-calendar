@@ -184,26 +184,6 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
     const sPage = parseInt(startPage) || 0;
     const ePage = parseInt(endPage) || 0;
 
-    if (sPage < 0 || ePage < 0) {
-      alert("페이지 수는 음수일 수 없습니다.");
-      return;
-    }
-
-    if (selectedBook.pageCount && ePage > selectedBook.pageCount) {
-      alert(`끝 페이지가 책의 총 페이지(${selectedBook.pageCount}p)를 초과할 수 없습니다.`);
-      return;
-    }
-
-    if (selectedBook.pageCount && sPage > selectedBook.pageCount) {
-      alert(`시작 페이지가 책의 총 페이지(${selectedBook.pageCount}p)를 초과할 수 없습니다.`);
-      return;
-    }
-
-    if (ePage > 0 && sPage > ePage) {
-      alert("끝 페이지는 시작 페이지보다 크거나 같아야 합니다.");
-      return;
-    }
-
     const pagesReadAmount = ePage >= sPage ? ePage - sPage : ePage;
 
     // 장르를 books 테이블에 업데이트 (또는 저장)
