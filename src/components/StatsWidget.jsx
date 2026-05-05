@@ -21,18 +21,24 @@ const StatCard = ({ title, value, subtitle, icon: Icon, colorClass, gradientClas
 const StatsWidget = () => {
   const stats = useAtomValue(statsAtom);
 
+  const getCompletedSubtitle = (count) => {
+    if (count === 0) return <span className="text-slate-500 font-medium">독서를 시작해볼까요?</span>;
+    if (count <= 3) return <><TrendingUp size={12} className="text-emerald-500" /> <span className="text-emerald-600 font-medium">잘하고 있어요!</span></>;
+    return <><TrendingUp size={12} className="text-emerald-500" /> <span className="text-emerald-600 font-medium">엄청난 독서량이에요!</span></>;
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <StatCard 
         title="이번 달 완독" 
         value={`${stats.booksReadThisMonth}권`}
-        subtitle={<><TrendingUp size={12} className="text-emerald-500" /> <span className="text-emerald-600 font-medium">잘하고 있어요!</span></>}
+        subtitle={getCompletedSubtitle(stats.booksReadThisMonth)}
         icon={BookMarked}
         gradientClass="from-primary-500 to-primary-600"
       />
       <StatCard 
-        title="총 읽은 페이지" 
-        value={`${stats.totalPagesRead}p`}
+        title="이번 달 읽은 페이지" 
+        value={`${stats.pagesReadThisMonth || 0}p`}
         subtitle="꾸준히 읽고 있어요!"
         icon={TrendingUp}
         gradientClass="from-emerald-400 to-emerald-500"

@@ -133,12 +133,14 @@ export const statsAtom = atom((get) => {
     r.status === 'completed' && dayjs(r.date).format('YYYY-MM') === currentMonth
   ).length;
   // 임시 목표치 1000
-  const totalPagesRead = readings.reduce((acc, curr) => {
-    const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
-                  ? (parseInt(curr.endPage) || 0) - (parseInt(curr.startPage) || 0)
-                  : (parseInt(curr.pagesRead) || 0);
-    return acc + Math.max(0, delta);
-  }, 0);
+  const pagesReadThisMonth = readings
+    .filter(r => dayjs(r.date).format('YYYY-MM') === currentMonth)
+    .reduce((acc, curr) => {
+      const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
+                    ? (parseInt(curr.endPage) || 0) - (parseInt(curr.startPage) || 0)
+                    : (parseInt(curr.pagesRead) || 0);
+      return acc + Math.max(0, delta);
+    }, 0);
   // 연속 기록 및 최고 기록 계산
   const uniqueDates = [...new Set(readings.map(r => dayjs(r.date).format('YYYY-MM-DD')))].sort((a, b) => dayjs(b).diff(dayjs(a)));
   
@@ -182,7 +184,7 @@ export const statsAtom = atom((get) => {
   
   return {
     booksReadThisMonth,
-    totalPagesRead,
+    pagesReadThisMonth,
     currentStreak,
     maxStreak,
   };

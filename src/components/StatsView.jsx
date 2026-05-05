@@ -23,12 +23,12 @@ const StatsView = () => {
         badge: "엄청난 다독가!",
         message: `훌륭합니다! 이번 달에 벌써 ${stats.booksReadThisMonth}권을 완독하셨어요.`
       };
-    } else if (stats.totalPagesRead >= 500) {
+    } else if (stats.pagesReadThisMonth >= 500) {
       return {
-        badge: "지식이 쌓이는 중!",
-        message: `멋집니다! 무려 ${stats.totalPagesRead}쪽의 지식을 흡수하셨어요.`
+        badge: '놀라운 집중력 🎯',
+        message: `멋집니다! 무려 ${stats.pagesReadThisMonth}쪽의 지식을 흡수하셨어요.`
       };
-    } else if (stats.totalPagesRead > 0) {
+    } else if (stats.pagesReadThisMonth > 0) {
       return {
         badge: "좋은 시작!",
         message: "꾸준한 독서로 매일매일 성장하고 있어요."
@@ -133,8 +133,8 @@ const StatsView = () => {
               </div>
               <div className="w-px h-8 bg-primary-500/50"></div>
               <div>
-                <p className="text-primary-200 text-xs">총 읽은 페이지</p>
-                <p className="text-2xl font-bold">{stats.totalPagesRead}p</p>
+                <p className="text-primary-200 text-xs">이번 달 읽은 페이지</p>
+                <p className="text-2xl font-bold">{stats.pagesReadThisMonth || 0}p</p>
               </div>
             </div>
           </div>
