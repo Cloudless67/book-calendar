@@ -113,11 +113,17 @@ const RecordFormFields = ({
 
       {/* Review / Memo */}
       <div>
-        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-          <Edit3 size={16} className="text-slate-400" /> 한 줄 평 및 메모
+        <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <Edit3 size={16} className="text-slate-400" /> 한 줄 평 및 메모
+          </span>
+          <span className={`text-xs ${memo?.length >= 140 ? 'text-rose-500 font-medium' : 'text-slate-400'}`}>
+            {memo?.length || 0}/140자
+          </span>
         </label>
         <textarea
           rows={3}
+          maxLength={140}
           value={memo}
           onChange={(e) => setMemo(e.target.value)}
           className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none resize-none"
