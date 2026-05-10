@@ -79,7 +79,10 @@ function App() {
   return (
     <div className="flex min-h-dvh bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
       {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} />}
-      <Sidebar onOpenLoginModal={() => setIsLoginModalOpen(true)} />
+      <Sidebar 
+        onOpenLoginModal={() => setIsLoginModalOpen(true)} 
+        onLogout={handleLogout}
+      />
       
       <main className="flex-1 min-w-0 md:ml-64 p-4 sm:p-6 lg:p-10 transition-all">
         <div className="max-w-6xl mx-auto">

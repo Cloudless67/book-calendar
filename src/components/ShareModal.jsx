@@ -93,7 +93,6 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-slate-200/50 shrink-0">
           <div>
             <h3 className="text-lg font-bold text-slate-800">이달의 독서 기록 공유</h3>
-            <p className="text-sm text-slate-500">인스타그램 피드에 최적화된 사이즈입니다</p>
           </div>
           <button 
             onClick={onClose}
@@ -198,7 +197,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                 
                 <div className="text-right">
                   <p className="text-[8px] md:text-[10px] text-slate-300">책 읽는 습관을 시각적으로 관리하세요.</p>
-                  <p className="text-[10px] md:text-xs font-bold text-slate-400 tracking-tighter">booklog.io</p>
+                  <p className="text-[10px] md:text-xs font-bold text-slate-400 tracking-tighter">booklog.cloudles.blog</p>
                 </div>
               </div>
             </footer>
