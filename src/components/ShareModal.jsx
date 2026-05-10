@@ -136,7 +136,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                   }
 
                   if (coverUrl) {
-                    const proxiedCoverUrl = `/image-proxy?url=${encodeURIComponent(coverUrl)}`;
+                    const proxiedCoverUrl = `/api/image-proxy?url=${encodeURIComponent(coverUrl)}`;
                     return (
                       <div 
                         key={i} 
