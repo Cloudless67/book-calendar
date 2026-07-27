@@ -1,47 +1,56 @@
 import { supabase } from './supabase';
 
 /**
- * 네이버 도서 검색 API 호출
+ * 카카오 도서 검색 API 호출
  */
-export const searchNaverBooks = async (searchType, debouncedQuery, searchPage) => {
+export const searchKakaoBooks = async (searchType, debouncedQuery, searchPage) => {
   if (debouncedQuery.trim().length < 2) return { items: [], total: 0 };
 
   const searchParams = new URLSearchParams({
-    display: 10,
-    start: (searchPage - 1) * 10 + 1,
-    sort: 'sim',
+    query: debouncedQuery,
+    size: 10,
+    page: searchPage,
+    sort: 'accuracy',
   });
 
-  if (searchType === 'kwd') {
-    searchParams.append('query', debouncedQuery);
-  } else {
-    if (searchType === 'title') searchParams.append('d_titl', debouncedQuery);
-    if (searchType === 'isbn') searchParams.append('d_isbn', debouncedQuery);
+  if (searchType === 'title') {
+    searchParams.append('target', 'title');
+  } else if (searchType === 'isbn') {
+    searchParams.append('target', 'isbn');
+  } else if (searchType === 'author') {
+    searchParams.append('target', 'person');
   }
 
-  const res = await fetch(`/api/naver-search?${searchParams.toString()}`);
+  const res = await fetch(`/api/kakao-search?${searchParams.toString()}`);
 
-  if (!res.ok) throw new Error(`Naver API error: ${res.status}`);
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.error || errorData.message || `Kakao API error: ${res.status}`);
+  }
 
   const jsonData = await res.json();
-  const parsedResults = (jsonData.items || []).map((item, index) => {
+  const parsedResults = (jsonData.documents || []).map((item, index) => {
     const rawTitle = item.title || '제목 없음';
-    const rawAuthor = item.author || '작자 미상';
+    const rawAuthor = Array.isArray(item.authors) ? item.authors.join(', ') : (item.authors || '작자 미상');
     return {
-      id: `naver-${index}-${Date.now()}`,
+      id: `kakao-${index}-${Date.now()}`,
       title: rawTitle.replace(/<[^>]*>?/gm, ''),
       author: rawAuthor.replace(/<[^>]*>?/gm, ''),
-      coverUrl: item.image || 'https://via.placeholder.com/128x192.png?text=No+Cover',
+      coverUrl: item.thumbnail || 'https://via.placeholder.com/128x192.png?text=No+Cover',
       isbn: item.isbn || '',
       pageCount: 300,
+      publisher: item.publisher || '',
     };
   });
 
   return {
     items: parsedResults,
-    total: parseInt(jsonData.total || 0),
+    total: parseInt(jsonData.meta?.total_count || 0),
   };
 };
+
+// 하위 호환성을 위한 alias
+export const searchNaverBooks = searchKakaoBooks;
 
 /**
  * 도서 선택 시 상세 정보 처리 (서지 API, 이미지 캐싱 등)
@@ -88,9 +97,15 @@ export const processBookSelection = async (book) => {
       }
     }
 
-    // 3. 네이버 썸네일 이미지를 Supabase Storage에 저장
+    // 3. 외부 썸네일(카카오/네이버) 이미지를 Supabase Storage에 저장
     let supabaseImageUrl = finalBook.coverUrl;
-    if (finalBook.coverUrl && finalBook.coverUrl.includes('pstatic.net')) {
+    const isExternalImage = finalBook.coverUrl && (
+      finalBook.coverUrl.includes('kakaocdn.net') ||
+      finalBook.coverUrl.includes('daumcdn.net') ||
+      finalBook.coverUrl.includes('pstatic.net')
+    );
+
+    if (isExternalImage) {
       try {
         const imgRes = await fetch(`/api/image-proxy?url=${encodeURIComponent(finalBook.coverUrl)}`);
         const imgBlob = await imgRes.blob();

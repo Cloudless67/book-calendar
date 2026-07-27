@@ -9,7 +9,7 @@ import { addReadingAtom, updateReadingAtom, deleteReadingAtom, readingsAtom, loa
 import { supabase } from '../lib/supabase';
 
 // Lib & Components
-import { searchNaverBooks, processBookSelection } from '../lib/bookApi';
+import { searchKakaoBooks, processBookSelection } from '../lib/bookApi';
 import DateSelector from './record/DateSelector';
 import BookSearch from './record/BookSearch';
 import RecentBooks from './record/RecentBooks';
@@ -144,8 +144,8 @@ const RecordModal = ({ isOpen, onClose, initialDate, initialEndDate, initialReco
   }, [debouncedQuery]);
 
   const { data: queryData, isFetching: isSearching } = useQuery({
-    queryKey: ['naverSearch', searchType, debouncedQuery, searchPage],
-    queryFn: () => searchNaverBooks(searchType, debouncedQuery, searchPage),
+    queryKey: ['kakaoSearch', searchType, debouncedQuery, searchPage],
+    queryFn: () => searchKakaoBooks(searchType, debouncedQuery, searchPage),
     enabled: debouncedQuery.trim().length > 1,
     staleTime: 1000 * 60 * 60,
   });

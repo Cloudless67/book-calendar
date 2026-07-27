@@ -54,35 +54,43 @@ export default defineConfig(({ mode }) => {
                   return;
                 }
               }
-            } else if (req.url && req.url.startsWith('/api/naver-search')) {
+            } else if (req.url && req.url.startsWith('/api/kakao-search')) {
               try {
+                const liveEnv = loadEnv(mode, process.cwd(), '');
                 const urlObj = new URL(req.url, 'http://localhost');
                 const searchParams = urlObj.searchParams;
-                
-                let endpoint = 'https://openapi.naver.com/v1/search/book.json';
-                if (searchParams.has('d_titl') || searchParams.has('d_auth') || searchParams.has('d_isbn')) {
-                  endpoint = 'https://openapi.naver.com/v1/search/book_adv.json';
+                const apiKey = (
+                  process.env.VITE_KAKAO_REST_API_KEY ||
+                  liveEnv.VITE_KAKAO_REST_API_KEY ||
+                  liveEnv.KAKAO_REST_API_KEY ||
+                  process.env.KAKAO_REST_API_KEY ||
+                  ''
+                ).trim();
+
+                if (!apiKey) {
+                  res.statusCode = 400;
+                  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                  res.end(JSON.stringify({
+                    error: '카카오 REST API 키가 설정되지 않았습니다. .env 파일의 VITE_KAKAO_REST_API_KEY에 키를 입력해 주세요.'
+                  }));
+                  return;
                 }
 
-                const response = await fetch(`${endpoint}?${searchParams.toString()}`, {
+                const response = await fetch(`https://dapi.kakao.com/v3/search/book?${searchParams.toString()}`, {
                   headers: {
-                    'X-Naver-Client-Id': env.VITE_NAVER_CLIENT_ID || env.NAVER_CLIENT_ID || '',
-                    'X-Naver-Client-Secret': env.VITE_NAVER_CLIENT_SECRET || env.NAVER_CLIENT_SECRET || '',
+                    'Authorization': `KakaoAK ${apiKey}`,
                   },
                 });
 
-                if (!response.ok) {
-                  res.statusCode = response.status;
-                  res.end(await response.text());
-                  return;
-                }
                 const data = await response.text();
-                res.setHeader('Content-Type', 'application/json');
+                res.statusCode = response.status;
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
                 res.end(data);
                 return;
               } catch(e) {
                 res.statusCode = 500;
-                res.end(e.message);
+                res.setHeader('Content-Type', 'application/json; charset=utf-8');
+                res.end(JSON.stringify({ error: e.message }));
                 return;
               }
             } else if (req.url && req.url.startsWith('/api/seoji-search')) {
