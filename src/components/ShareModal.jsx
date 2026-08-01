@@ -8,18 +8,21 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   const shareRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
   const [coverDataUrls, setCoverDataUrls] = useState({});
+  const [previewImage, setPreviewImage] = useState(null);
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
+      setPreviewImage(null);
     }
     return () => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
 
+  // Pre-convert images to base64 Data URLs when modal is open
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
@@ -36,9 +39,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
             return;
           }
           try {
-            const proxyUrl = url.includes('supabase.co')
-              ? url
-              : `${window.location.origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
+            const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(url)}`;
             const res = await fetch(proxyUrl);
             if (!res.ok) return;
             const blob = await res.blob();
@@ -106,11 +107,60 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
 
   const getImageSrc = (url) => {
     if (!url) return '';
-    if (url.includes('supabase.co') || url.startsWith('data:')) {
+    if (url.startsWith('data:')) {
       return url;
     }
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
     return `${origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
+  };
+
+  const ensureImagesAreDataUrls = async (container) => {
+    const images = Array.from(container.querySelectorAll('img'));
+    
+    await Promise.all(
+      images.map(async (img) => {
+        if (!img.src || img.src.startsWith('data:')) return;
+
+        try {
+          // 1. Try canvas drawing if image is already rendered in DOM
+          if (img.complete && img.naturalWidth > 0) {
+            try {
+              const canvas = document.createElement('canvas');
+              canvas.width = img.naturalWidth;
+              canvas.height = img.naturalHeight;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0);
+              const dataUrl = canvas.toDataURL('image/png');
+              if (dataUrl && dataUrl.length > 100) {
+                img.src = dataUrl;
+                return;
+              }
+            } catch (canvasErr) {
+              // Canvas tainted, fallback to proxy fetch
+            }
+          }
+
+          // 2. Fetch via proxy
+          const targetUrl = img.dataset.rawUrl || img.src;
+          const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(targetUrl)}`;
+          const res = await fetch(proxyUrl);
+          if (res.ok) {
+            const blob = await res.blob();
+            const dataUrl = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = () => resolve('');
+              reader.readAsDataURL(blob);
+            });
+            if (dataUrl) {
+              img.src = dataUrl;
+            }
+          }
+        } catch (e) {
+          console.warn('Image conversion to DataURL failed:', e);
+        }
+      })
+    );
   };
 
   const handleDownload = async () => {
@@ -118,21 +168,9 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     try {
       setIsCapturing(true);
 
-      // Wait for images with 2s max timeout so Promise never hangs indefinitely
-      const images = shareRef.current.querySelectorAll('img');
-      if (images.length > 0) {
-        const imagePromises = Array.from(images).map((img) => {
-          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-          return new Promise((resolve) => {
-            const onDone = () => resolve();
-            img.addEventListener('load', onDone, { once: true });
-            img.addEventListener('error', onDone, { once: true });
-          });
-        });
-
-        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000));
-        await Promise.race([Promise.all(imagePromises), timeoutPromise]);
-      }
+      // Force convert all <img> elements inside container to inline base64 Data URLs
+      await ensureImagesAreDataUrls(shareRef.current);
+      await new Promise(r => setTimeout(r, 50));
 
       const dataUrl = await toPng(shareRef.current, {
         cacheBust: false,
@@ -146,9 +184,10 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       }
 
       const fileName = `booklog-${currentDate.format('YYYY-MM')}.png`;
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-      // Check for Web Share API (especially for Mobile devices)
-      if (navigator.canShare && navigator.share) {
+      // 1. Try Web Share API for Mobile Devices
+      if (isMobile && navigator.canShare && navigator.share) {
         try {
           const res = await fetch(dataUrl);
           const blob = await res.blob();
@@ -165,7 +204,13 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         }
       }
 
-      // Standard desktop download
+      // 2. On Mobile browsers where Web Share fails or is unsupported: Show preview overlay for long press save
+      if (isMobile) {
+        setPreviewImage(dataUrl);
+        return;
+      }
+
+      // 3. Desktop download
       const link = document.createElement('a');
       link.download = fileName;
       link.href = dataUrl;
@@ -248,11 +293,9 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                         <img 
                           src={imgSrc} 
                           alt="" 
+                          data-raw-url={coverUrl}
                           crossOrigin="anonymous"
                           className="w-full h-full object-cover rounded-xl"
-                          onError={(e) => {
-                            e.target.style.display = 'none';
-                          }}
                         />
                         <span className="absolute top-1 left-1.5 text-[9px] md:text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] z-20">
                           {dayNumber}
@@ -339,6 +382,39 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
           </button>
         </div>
         </div>
+
+        {/* Mobile Preview Overlay for Long-press Save */}
+        {previewImage && (
+          <div className="fixed inset-0 z-[120] bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-4">
+            <div className="bg-white rounded-2xl p-4 max-w-[360px] w-full flex flex-col items-center gap-3 text-center shadow-2xl">
+              <div className="flex items-center justify-between w-full pb-2 border-b border-slate-100">
+                <span className="text-sm font-bold text-slate-800">📸 이미지 저장 안내</span>
+                <button 
+                  onClick={() => setPreviewImage(null)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded-full"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <p className="text-xs text-primary-600 font-bold bg-primary-50 px-3 py-1.5 rounded-lg border border-primary-100">
+                💡 아래 이미지를 길게 눌러 [사진 앱에 저장]을 눌러주세요!
+              </p>
+              <div className="w-full max-h-[50vh] overflow-hidden rounded-xl border border-slate-200">
+                <img 
+                  src={previewImage} 
+                  alt="BookLog 독서 캘린더" 
+                  className="w-full h-auto object-contain rounded-xl select-all"
+                />
+              </div>
+              <button
+                onClick={() => setPreviewImage(null)}
+                className="w-full py-2.5 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition-colors"
+              >
+                닫기
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>,
     document.body
