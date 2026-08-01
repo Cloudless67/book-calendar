@@ -56,14 +56,36 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     }
   }
 
+  const getImageSrc = (url) => {
+    if (!url) return '';
+    if (url.includes('supabase.co') || url.startsWith('data:')) {
+      return url;
+    }
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    return `${origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
+  };
+
   const handleDownload = async () => {
     if (!shareRef.current) return;
     try {
       setIsCapturing(true);
+
+      // Wait for all images inside shareRef to finish loading
+      const images = shareRef.current.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+
       const dataUrl = await toPng(shareRef.current, {
-        cacheBust: true,
+        cacheBust: false,
         pixelRatio: 2,
-        backgroundColor: '#ffffff' // Ensure background is white in case of transparency issues
+        backgroundColor: '#ffffff'
       });
       
       const link = document.createElement('a');
@@ -136,22 +158,28 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                   }
 
                   if (coverUrl) {
-                    const proxiedCoverUrl = `/api/image-proxy?url=${encodeURIComponent(coverUrl)}`;
+                    const imgSrc = getImageSrc(coverUrl);
                     return (
                       <div 
                         key={i} 
-                        className="aspect-square bg-cover bg-center rounded-xl relative shadow-inner overflow-hidden"
-                        style={{ backgroundImage: `url(${proxiedCoverUrl})`, boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}
+                        className="aspect-square rounded-xl relative shadow-inner overflow-hidden flex items-center justify-center bg-slate-100"
+                        style={{ boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.05)' }}
                       >
-                        <span className="absolute top-1 left-1.5 text-[9px] md:text-[10px] font-bold text-white drop-shadow-md z-20">
+                        <img 
+                          src={imgSrc} 
+                          alt="" 
+                          crossOrigin="anonymous"
+                          className="w-full h-full object-cover rounded-xl"
+                        />
+                        <span className="absolute top-1 left-1.5 text-[9px] md:text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] z-20">
                           {dayNumber}
                         </span>
                         {completed && (
-                          <span className="absolute top-0 right-0 bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[7px] lg:text-[8px] font-bold px-1 py-0.5 rounded-bl-md shadow-sm z-10">
+                          <span className="absolute top-0 right-0 bg-gradient-to-br from-amber-400 to-amber-500 text-white text-[7px] lg:text-[8px] font-bold px-1 py-0.5 rounded-bl-md shadow-sm z-20">
                             완독
                           </span>
                         )}
-                        {!completed && <div className="absolute inset-0 bg-white/20 rounded-xl z-10" />}
+                        {!completed && <div className="absolute inset-0 bg-white/20 rounded-xl z-10 pointer-events-none" />}
                       </div>
                     );
                   }

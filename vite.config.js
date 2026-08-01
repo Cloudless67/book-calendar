@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
         name: 'api-mock',
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
-            if (req.url && req.url.startsWith('/api/image-proxy?url=')) {
+            if (req.url && req.url.startsWith('/api/image-proxy')) {
               const targetUrl = new URL(req.url, 'http://localhost').searchParams.get('url');
               if (targetUrl) {
                 try {

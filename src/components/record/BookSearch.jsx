@@ -60,7 +60,7 @@ const BookSearch = ({
             setSearchPage(1);
           }}
           className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all outline-none text-slate-700"
-          placeholder="카카오 도서 검색 API로 책 제목 검색..."
+          placeholder="도서 검색..."
         />
 
         {/* Search Dropdown */}
