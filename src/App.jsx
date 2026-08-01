@@ -3,6 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import { useAtom, useSetAtom } from 'jotai';
 import { loadReadingsAtom, loadBooksAtom, userAtom, isAuthLoadedAtom } from './store';
 import { supabase } from './lib/supabase';
+import { Smartphone, Download } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import StatsWidget from './components/StatsWidget';
 import CalendarWidget from './components/CalendarWidget';
@@ -12,6 +13,7 @@ import StatsView from './components/StatsView';
 import LoginModal from './components/LoginModal';
 import PrivacyPolicy from './components/legal/PrivacyPolicy';
 import TermsOfService from './components/legal/TermsOfService';
+import PwaInstallModal from './components/PwaInstallModal';
 
 function App() {
   const loadReadings = useSetAtom(loadReadingsAtom);
@@ -20,14 +22,15 @@ function App() {
   const [isAuthLoaded, setIsAuthLoaded] = useAtom(isAuthLoadedAtom);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEndDate, setSelectedEndDate] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [selectedBook, setSelectedBookState] = useState(null);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const location = useLocation();
-  
-  const isPublicRoute = ['/privacy', '/terms'].includes(location.pathname);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -51,6 +54,19 @@ function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthLoaded, user?.id, loadReadings, loadBooks]);
 
+  // Capture PWA beforeinstallprompt event
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
   const handleOpenModal = (date = new Date(), record = null, endDate = null, initialBook = null) => {
     setSelectedDate(date);
     setSelectedRecord(record);
@@ -72,6 +88,17 @@ function App() {
     setIsProfileMenuOpen(false);
   };
 
+  const handleInstallPwa = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+        setIsPwaModalOpen(false);
+      }
+    }
+  };
+
   if (!isAuthLoaded) {
     return <div className="flex min-h-dvh bg-slate-50/50 items-center justify-center"></div>;
   }
@@ -79,19 +106,30 @@ function App() {
   return (
     <div className="flex min-h-dvh bg-slate-50/50 pb-16 md:pb-0 overflow-x-hidden w-full relative">
       {isLoginModalOpen && <LoginModal onClose={() => setIsLoginModalOpen(false)} />}
+      
       <Sidebar 
         onOpenLoginModal={() => setIsLoginModalOpen(true)} 
         onLogout={handleLogout}
+        onOpenPwaModal={() => setIsPwaModalOpen(true)}
       />
       
       <main className="flex-1 min-w-0 md:ml-64 p-4 sm:p-6 lg:p-10 transition-all">
         <div className="max-w-6xl mx-auto">
-          {/* 우측 상단 유저 프로필 영역 (공통) */}
+          {/* 우측 상단 유저 프로필 & PWA 설치 영역 (공통) */}
           <div className="flex justify-end mb-4">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* App Install Button */}
+              <button
+                onClick={() => setIsPwaModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-sm transition-all"
+              >
+                <Smartphone size={15} className="text-primary-600" />
+                <span>앱 설치</span>
+              </button>
+
               {user ? (
                 <div className="relative">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3">
                     <span className="text-sm font-medium text-slate-700 hidden sm:block">
                       {user.user_metadata?.name || user.email?.split('@')[0] || user.user_metadata?.nickname}
                     </span>
@@ -169,6 +207,13 @@ function App() {
         initialEndDate={selectedEndDate}
         initialRecord={selectedRecord}
         initialBook={selectedBook}
+      />
+
+      <PwaInstallModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallClick={handleInstallPwa}
       />
     </div>
   );

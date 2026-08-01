@@ -2,9 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAtomValue } from 'jotai';
 import { statsAtom, userAtom } from '../store';
-import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame } from 'lucide-react';
+import { BookOpen, Calendar, PieChart, Settings, LogOut, Flame, Smartphone, Download } from 'lucide-react';
 
-const Sidebar = ({ onOpenLoginModal, onLogout }) => {
+const Sidebar = ({ onOpenLoginModal, onLogout, onOpenPwaModal }) => {
   const stats = useAtomValue(statsAtom);
   const user = useAtomValue(userAtom);
 
@@ -16,15 +16,15 @@ const Sidebar = ({ onOpenLoginModal, onLogout }) => {
 
   return (
     <aside className="fixed bottom-0 left-0 right-0 md:top-0 md:right-auto md:w-64 h-16 md:h-dvh bg-white rounded-t-2xl md:rounded-none border-t md:border-r border-slate-200 flex flex-row md:flex-col md:p-6 z-50 transition-all shadow-[0_-10px_20px_-5px_rgba(0,0,0,0.05)] md:shadow-none">
-      <div className="hidden md:flex items-center gap-3 mb-10">
-        <img src="./booklog.png" alt="" className='w-16 h-16' />
+      <div className="hidden md:flex items-center gap-3 mb-8">
+        <img src="./booklog.png" alt="" className="w-14 h-14" />
         <h1 className="text-xl font-bold bg-gradient-to-r from-primary-700 to-primary-500 bg-clip-text text-transparent">
           BookLog
         </h1>
       </div>
 
       {user && (
-        <div className="hidden md:block mb-8 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50 relative overflow-hidden group">
+        <div className="hidden md:block mb-6 p-4 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100/50 relative overflow-hidden group">
           <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 bg-orange-200 rounded-full opacity-20 group-hover:scale-150 transition-transform duration-500" />
           <div className="flex items-center gap-3 mb-2">
             <Flame className="text-orange-500" size={20} />
@@ -57,34 +57,52 @@ const Sidebar = ({ onOpenLoginModal, onLogout }) => {
             )}
           </NavLink>
         ))}
+
+        {/* Mobile PWA Install Guide Icon Button */}
+        <button
+          onClick={onOpenPwaModal}
+          className="flex-1 md:hidden flex flex-col items-center justify-center gap-1 px-2 py-1.5 rounded-xl text-slate-400 hover:text-primary-600 transition-colors"
+        >
+          <Smartphone size={20} />
+          <span className="text-[10px]">앱 설치</span>
+        </button>
       </nav>
 
-      <div className="hidden md:block border-t border-slate-100 pt-6 space-y-2">
+      <div className="hidden md:block border-t border-slate-100 pt-4 space-y-2">
+        {/* Desktop PWA Install Button */}
+        <button
+          onClick={onOpenPwaModal}
+          className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 bg-slate-50 hover:bg-slate-100 font-medium transition-colors text-sm border border-slate-200/60"
+        >
+          <Download size={18} className="text-primary-600" />
+          <span>앱으로 설치하기</span>
+        </button>
+
         {user ? (
           <>
             <button 
               disabled 
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-300 cursor-not-allowed transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-300 cursor-not-allowed transition-colors text-sm"
             >
-              <Settings size={20} />
+              <Settings size={18} />
               <span>설정</span>
             </button>
             <button 
               onClick={onLogout}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-500 hover:bg-slate-50 transition-colors text-sm"
             >
-              <LogOut size={20} />
+              <LogOut size={18} />
               <span>로그아웃</span>
             </button>
           </>
         ) : (
-          <button onClick={onOpenLoginModal} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-primary-600 bg-primary-50 hover:bg-primary-100 font-medium transition-colors">
-            <LogOut size={20} className="rotate-180" />
+          <button onClick={onOpenLoginModal} className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-primary-600 bg-primary-50 hover:bg-primary-100 font-medium transition-colors text-sm">
+            <LogOut size={18} className="rotate-180" />
             <span>로그인하기</span>
           </button>
         )}
         
-        <div className="pt-4 flex flex-wrap gap-x-3 gap-y-1 px-4">
+        <div className="pt-3 flex flex-wrap gap-x-3 gap-y-1 px-4">
           <NavLink to="/privacy" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">개인정보 처리방침</NavLink>
           <NavLink to="/terms" className="text-[11px] text-slate-400 hover:text-slate-600 transition-colors">이용약관</NavLink>
         </div>
