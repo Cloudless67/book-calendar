@@ -114,20 +114,24 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     return `${origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
   };
 
-  // Dynamic 2D Canvas Renderer (Auto height adjustment for 5-row and 6-row months)
+  // Standard Instagram 4:5 Portrait Feed Spec (1080 x 1350 px) with Vertically Centered Grid
   const renderShareCardToCanvas = async () => {
-    const totalRows = Math.ceil(days.length / 7);
-    const paddingX = 60;
-    const startY = 150;
-    const gap = 16;
+    const width = 1080;
+    const height = 1350;
+    const paddingX = 70;
+    const headerBottomY = 160;
+    const footerTopY = 1200;
     const cols = 7;
-    const width = 960;
-    const cellWidth = Math.floor((width - paddingX * 2 - (cols - 1) * gap) / cols); // ~106px
-    const cellHeight = cellWidth;
+    const gap = 18;
+    const totalRows = Math.ceil(days.length / 7);
 
+    const cellWidth = Math.floor((width - paddingX * 2 - (cols - 1) * gap) / cols); // ~118px
+    const cellHeight = cellWidth;
     const gridHeight = totalRows * cellHeight + (totalRows - 1) * gap;
-    const footerY = startY + gridHeight + 35;
-    const height = footerY + 145;
+
+    // Center grid vertically between header and footer for perfect balance
+    const availableHeight = footerTopY - headerBottomY;
+    const gridStartY = headerBottomY + Math.floor((availableHeight - gridHeight) / 2);
 
     const canvas = document.createElement('canvas');
     canvas.width = width;
@@ -165,26 +169,26 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     };
 
     // Header
-    ctx.font = '36px sans-serif';
+    ctx.font = '40px sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText('📚', 60, 80);
+    ctx.fillText('📚', 70, 95);
 
-    ctx.font = 'bold 36px sans-serif';
+    ctx.font = 'bold 40px sans-serif';
     ctx.fillStyle = '#0f172a';
-    ctx.fillText('Book', 115, 80);
+    ctx.fillText('Book', 130, 95);
     const bookWidth = ctx.measureText('Book').width;
     ctx.fillStyle = '#2563eb';
-    ctx.fillText('Log', 115 + bookWidth, 80);
+    ctx.fillText('Log', 130 + bookWidth, 95);
 
     // Right Header
     ctx.textAlign = 'right';
     ctx.fillStyle = '#0f172a';
-    ctx.font = 'bold 26px sans-serif';
-    ctx.fillText(currentDate.format('YYYY년 M월'), width - 60, 70);
+    ctx.font = 'bold 28px sans-serif';
+    ctx.fillText(currentDate.format('YYYY년 M월'), width - 70, 85);
     ctx.fillStyle = '#64748b';
-    ctx.font = '500 20px sans-serif';
-    ctx.fillText('나의 독서 여정', width - 60, 100);
+    ctx.font = '500 22px sans-serif';
+    ctx.fillText('나의 독서 여정', width - 70, 118);
 
     // Pre-load all images for canvas
     const imageMap = {};
@@ -217,7 +221,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
       const x = paddingX + col * (cellWidth + gap);
-      const y = startY + row * (cellHeight + gap);
+      const y = gridStartY + row * (cellHeight + gap);
 
       const isCurrentMonth = day.isSame(currentDate, 'month');
       const isToday = day.isSame(dayjs(), 'day');
@@ -227,7 +231,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       const dayNumber = day.format('D');
 
       if (!isCurrentMonth) {
-        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#f8fafc', '#f1f5f9');
+        drawRoundRect(x, y, cellWidth, cellHeight, 18, '#f8fafc', '#f1f5f9');
         return;
       }
 
@@ -237,7 +241,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         ctx.save();
         ctx.beginPath();
         if (typeof ctx.roundRect === 'function') {
-          ctx.roundRect(x, y, cellWidth, cellHeight, 16);
+          ctx.roundRect(x, y, cellWidth, cellHeight, 18);
         } else {
           ctx.rect(x, y, cellWidth, cellHeight);
         }
@@ -273,11 +277,11 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         ctx.shadowBlur = 4;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 1;
-        ctx.font = 'bold 20px sans-serif';
+        ctx.font = 'bold 22px sans-serif';
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(dayNumber, x + 10, y + 8);
+        ctx.fillText(dayNumber, x + 12, y + 10);
         ctx.restore();
 
         // Completed badge
@@ -285,38 +289,38 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
           ctx.save();
           ctx.beginPath();
           if (typeof ctx.roundRect === 'function') {
-            ctx.roundRect(x + cellWidth - 54, y, 54, 28, [0, 16, 0, 12]);
+            ctx.roundRect(x + cellWidth - 58, y, 58, 30, [0, 18, 0, 14]);
           } else {
-            ctx.rect(x + cellWidth - 54, y, 54, 28);
+            ctx.rect(x + cellWidth - 58, y, 58, 30);
           }
           ctx.fillStyle = '#f59e0b';
           ctx.fill();
-          ctx.font = 'bold 16px sans-serif';
+          ctx.font = 'bold 17px sans-serif';
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText('완독', x + cellWidth - 27, y + 14);
+          ctx.fillText('완독', x + cellWidth - 29, y + 15);
           ctx.restore();
         }
       } else if (isToday) {
-        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#ffffff', '#93c5fd', 3);
-        ctx.font = 'bold 20px sans-serif';
+        drawRoundRect(x, y, cellWidth, cellHeight, 18, '#ffffff', '#93c5fd', 3);
+        ctx.font = 'bold 22px sans-serif';
         ctx.fillStyle = '#3b82f6';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(dayNumber, x + 10, y + 8);
+        ctx.fillText(dayNumber, x + 12, y + 10);
 
-        ctx.font = 'bold 18px sans-serif';
+        ctx.font = 'bold 20px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('TODAY', x + cellWidth / 2, y + cellHeight / 2 + 6);
       } else {
-        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#f1f5f9');
-        ctx.font = '500 20px sans-serif';
+        drawRoundRect(x, y, cellWidth, cellHeight, 18, '#f1f5f9');
+        ctx.font = '500 22px sans-serif';
         ctx.fillStyle = '#94a3b8';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
-        ctx.fillText(dayNumber, x + 10, y + 8);
+        ctx.fillText(dayNumber, x + 12, y + 10);
       }
     });
 
@@ -324,45 +328,45 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     ctx.strokeStyle = '#f1f5f9';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.moveTo(60, footerY);
-    ctx.lineTo(width - 60, footerY);
+    ctx.moveTo(70, footerTopY);
+    ctx.lineTo(width - 70, footerTopY);
     ctx.stroke();
 
-    const statsY = footerY + 35;
+    const statsY = footerTopY + 40;
 
     // Stat 1: 완독
     ctx.textAlign = 'center';
-    ctx.font = '500 18px sans-serif';
+    ctx.font = '500 20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('완독', 120, statsY);
-    ctx.font = 'bold 32px sans-serif';
+    ctx.fillText('완독', 140, statsY);
+    ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = '#0f172a';
-    ctx.fillText(`${completedBooks}권`, 120, statsY + 40);
+    ctx.fillText(`${completedBooks}권`, 140, statsY + 45);
 
     // Stat 2: 총 페이지
-    ctx.font = '500 18px sans-serif';
+    ctx.font = '500 20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('총 페이지', 270, statsY);
-    ctx.font = 'bold 32px sans-serif';
+    ctx.fillText('총 페이지', 310, statsY);
+    ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = '#0f172a';
-    ctx.fillText(`${totalPages}p`, 270, statsY + 40);
+    ctx.fillText(`${totalPages}p`, 310, statsY + 45);
 
     // Stat 3: 연속
-    ctx.font = '500 18px sans-serif';
+    ctx.font = '500 20px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('연속', 410, statsY);
-    ctx.font = 'bold 32px sans-serif';
+    ctx.fillText('연속', 470, statsY);
+    ctx.font = 'bold 36px sans-serif';
     ctx.fillStyle = '#2563eb';
-    ctx.fillText(`${streak}일`, 410, statsY + 40);
+    ctx.fillText(`${streak}일`, 470, statsY + 45);
 
     // Right footer brand info
     ctx.textAlign = 'right';
-    ctx.font = '18px sans-serif';
+    ctx.font = '20px sans-serif';
     ctx.fillStyle = '#cbd5e1';
-    ctx.fillText('책 읽는 습관을 시각적으로 관리하세요.', width - 60, statsY + 10);
-    ctx.font = 'bold 22px sans-serif';
+    ctx.fillText('책 읽는 습관을 시각적으로 관리하세요.', width - 70, statsY + 12);
+    ctx.font = 'bold 24px sans-serif';
     ctx.fillStyle = '#94a3b8';
-    ctx.fillText('booklog.cloudles.blog', width - 60, statsY + 42);
+    ctx.fillText('booklog.cloudles.blog', width - 70, statsY + 47);
 
     return canvas.toDataURL('image/png');
   };
@@ -372,7 +376,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     try {
       setIsCapturing(true);
 
-      // Render pixel-perfect PNG using dynamic height Canvas
+      // Render pixel-perfect PNG in official Instagram 4:5 Feed resolution (1080 x 1350 px)
       let dataUrl = await renderShareCardToCanvas();
 
       if (!dataUrl || dataUrl === 'data:,') {
@@ -459,7 +463,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
           {/* The actual element to be captured */}
           <div 
             ref={shareRef}
-            className="w-full max-w-[480px] bg-white rounded-3xl shadow-xl flex flex-col gap-6 border border-slate-100 overflow-hidden relative p-6 md:p-8 shrink-0"
+            className="w-full max-w-[480px] aspect-[4/5] bg-white rounded-3xl shadow-xl flex flex-col justify-between border border-slate-100 overflow-hidden relative p-6 md:p-8 shrink-0"
           >
             <header className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
@@ -472,7 +476,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
               </div>
             </header>
 
-            <section className="flex items-center justify-center">
+            <section className="flex-grow flex items-center justify-center my-2">
               <div className="grid grid-cols-7 gap-1.5 md:gap-2.5 w-full">
                 {days.map((day, i) => {
                   const isCurrentMonth = day.isSame(currentDate, 'month');
