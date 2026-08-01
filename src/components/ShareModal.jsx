@@ -114,11 +114,22 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     return `${origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
   };
 
-  // Pure 2D Canvas Renderer for 100% iOS WebKit & Mobile Compatibility
+  // Dynamic 2D Canvas Renderer (Auto height adjustment for 5-row and 6-row months)
   const renderShareCardToCanvas = async () => {
-    const canvas = document.createElement('canvas');
+    const totalRows = Math.ceil(days.length / 7);
+    const paddingX = 60;
+    const startY = 150;
+    const gap = 16;
+    const cols = 7;
     const width = 960;
-    const height = 1200;
+    const cellWidth = Math.floor((width - paddingX * 2 - (cols - 1) * gap) / cols); // ~106px
+    const cellHeight = cellWidth;
+
+    const gridHeight = totalRows * cellHeight + (totalRows - 1) * gap;
+    const footerY = startY + gridHeight + 35;
+    const height = footerY + 145;
+
+    const canvas = document.createElement('canvas');
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext('2d');
@@ -174,14 +185,6 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     ctx.fillStyle = '#64748b';
     ctx.font = '500 20px sans-serif';
     ctx.fillText('나의 독서 여정', width - 60, 100);
-
-    // Grid setup
-    const paddingX = 60;
-    const startY = 150;
-    const gap = 16;
-    const cols = 7;
-    const cellWidth = Math.floor((width - paddingX * 2 - (cols - 1) * gap) / cols); // ~106px
-    const cellHeight = cellWidth;
 
     // Pre-load all images for canvas
     const imageMap = {};
@@ -317,8 +320,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       }
     });
 
-    // Footer
-    const footerY = height - 140;
+    // Footer Divider Line
     ctx.strokeStyle = '#f1f5f9';
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -370,7 +372,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     try {
       setIsCapturing(true);
 
-      // Render pixel-perfect PNG using native 2D Canvas (100% compatible with iOS WebKit)
+      // Render pixel-perfect PNG using dynamic height Canvas
       let dataUrl = await renderShareCardToCanvas();
 
       if (!dataUrl || dataUrl === 'data:,') {
@@ -457,9 +459,9 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
           {/* The actual element to be captured */}
           <div 
             ref={shareRef}
-            className="w-full max-w-[480px] aspect-[4/5] bg-white rounded-3xl shadow-xl flex flex-col justify-between border border-slate-100 overflow-hidden relative p-6 md:p-8 shrink-0"
+            className="w-full max-w-[480px] bg-white rounded-3xl shadow-xl flex flex-col gap-6 border border-slate-100 overflow-hidden relative p-6 md:p-8 shrink-0"
           >
-            <header className="flex items-center justify-between mb-6 shrink-0">
+            <header className="flex items-center justify-between shrink-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-xl">📚</span>
                 <h1 className="text-xl font-black text-slate-950 tracking-tighter">Book<span className="text-primary-600">Log</span></h1>
@@ -470,7 +472,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
               </div>
             </header>
 
-            <section className="flex-grow flex items-center justify-center">
+            <section className="flex items-center justify-center">
               <div className="grid grid-cols-7 gap-1.5 md:gap-2.5 w-full">
                 {days.map((day, i) => {
                   const isCurrentMonth = day.isSame(currentDate, 'month');
@@ -535,7 +537,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
               </div>
             </section>
 
-            <footer className="mt-8 pt-6 border-t border-slate-100 shrink-0">
+            <footer className="pt-4 border-t border-slate-100 shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex gap-4 text-center">
                   <div>
