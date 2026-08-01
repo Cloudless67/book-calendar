@@ -114,70 +114,273 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
     return `${origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
   };
 
-  const ensureImagesAreDataUrls = async (container) => {
-    const images = Array.from(container.querySelectorAll('img'));
-    
+  // Pure 2D Canvas Renderer for 100% iOS WebKit & Mobile Compatibility
+  const renderShareCardToCanvas = async () => {
+    const canvas = document.createElement('canvas');
+    const width = 960;
+    const height = 1200;
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // Outer border
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, width - 2, height - 2);
+
+    // Helper for rounded rectangle
+    const drawRoundRect = (x, y, w, h, radius, fillStyle, strokeStyle, strokeWidth = 1) => {
+      ctx.save();
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') {
+        ctx.roundRect(x, y, w, h, radius);
+      } else {
+        ctx.rect(x, y, w, h);
+      }
+      if (fillStyle) {
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+      }
+      if (strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = strokeWidth;
+        ctx.stroke();
+      }
+      ctx.restore();
+    };
+
+    // Header
+    ctx.font = '36px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('📚', 60, 80);
+
+    ctx.font = 'bold 36px sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText('Book', 115, 80);
+    const bookWidth = ctx.measureText('Book').width;
+    ctx.fillStyle = '#2563eb';
+    ctx.fillText('Log', 115 + bookWidth, 80);
+
+    // Right Header
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.fillText(currentDate.format('YYYY년 M월'), width - 60, 70);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '500 20px sans-serif';
+    ctx.fillText('나의 독서 여정', width - 60, 100);
+
+    // Grid setup
+    const paddingX = 60;
+    const startY = 150;
+    const gap = 16;
+    const cols = 7;
+    const cellWidth = Math.floor((width - paddingX * 2 - (cols - 1) * gap) / cols); // ~106px
+    const cellHeight = cellWidth;
+
+    // Pre-load all images for canvas
+    const imageMap = {};
     await Promise.all(
-      images.map(async (img) => {
-        if (!img.src || img.src.startsWith('data:')) return;
+      days.map(async (day) => {
+        const dayReadings = readings.filter(r => r.date === day.format('YYYY-MM-DD'));
+        const coverUrl = dayReadings.length > 0 ? dayReadings[0].coverUrl : null;
+        if (!coverUrl || imageMap[coverUrl]) return;
 
         try {
-          // 1. Try canvas drawing if image is already rendered in DOM
+          const imgSrc = coverDataUrls[coverUrl] || getImageSrc(coverUrl);
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          await new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            img.src = imgSrc;
+          });
           if (img.complete && img.naturalWidth > 0) {
-            try {
-              const canvas = document.createElement('canvas');
-              canvas.width = img.naturalWidth;
-              canvas.height = img.naturalHeight;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0);
-              const dataUrl = canvas.toDataURL('image/png');
-              if (dataUrl && dataUrl.length > 100) {
-                img.src = dataUrl;
-                return;
-              }
-            } catch (canvasErr) {
-              // Canvas tainted, fallback to proxy fetch
-            }
-          }
-
-          // 2. Fetch via proxy
-          const targetUrl = img.dataset.rawUrl || img.src;
-          const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(targetUrl)}`;
-          const res = await fetch(proxyUrl);
-          if (res.ok) {
-            const blob = await res.blob();
-            const dataUrl = await new Promise((resolve) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.onerror = () => resolve('');
-              reader.readAsDataURL(blob);
-            });
-            if (dataUrl) {
-              img.src = dataUrl;
-            }
+            imageMap[coverUrl] = img;
           }
         } catch (e) {
-          console.warn('Image conversion to DataURL failed:', e);
+          console.warn('Canvas image pre-load failed:', e);
         }
       })
     );
+
+    // Draw Grid
+    days.forEach((day, index) => {
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = paddingX + col * (cellWidth + gap);
+      const y = startY + row * (cellHeight + gap);
+
+      const isCurrentMonth = day.isSame(currentDate, 'month');
+      const isToday = day.isSame(dayjs(), 'day');
+      const dayReadings = readings.filter(r => r.date === day.format('YYYY-MM-DD'));
+      const completed = dayReadings.some(r => r.status === 'completed');
+      const coverUrl = dayReadings.length > 0 ? dayReadings[0].coverUrl : null;
+      const dayNumber = day.format('D');
+
+      if (!isCurrentMonth) {
+        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#f8fafc', '#f1f5f9');
+        return;
+      }
+
+      const loadedImg = coverUrl ? imageMap[coverUrl] : null;
+
+      if (loadedImg) {
+        ctx.save();
+        ctx.beginPath();
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(x, y, cellWidth, cellHeight, 16);
+        } else {
+          ctx.rect(x, y, cellWidth, cellHeight);
+        }
+        ctx.clip();
+
+        const imgRatio = loadedImg.naturalWidth / loadedImg.naturalHeight;
+        const cellRatio = cellWidth / cellHeight;
+        let drawW = cellWidth;
+        let drawH = cellHeight;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (imgRatio > cellRatio) {
+          drawW = cellHeight * imgRatio;
+          offsetX = (cellWidth - drawW) / 2;
+        } else {
+          drawH = cellWidth / imgRatio;
+          offsetY = (cellHeight - drawH) / 2;
+        }
+
+        ctx.drawImage(loadedImg, x + offsetX, y + offsetY, drawW, drawH);
+
+        if (!completed) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+          ctx.fillRect(x, y, cellWidth, cellHeight);
+        }
+
+        ctx.restore();
+
+        // Day number text
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 4;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 1;
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(dayNumber, x + 10, y + 8);
+        ctx.restore();
+
+        // Completed badge
+        if (completed) {
+          ctx.save();
+          ctx.beginPath();
+          if (typeof ctx.roundRect === 'function') {
+            ctx.roundRect(x + cellWidth - 54, y, 54, 28, [0, 16, 0, 12]);
+          } else {
+            ctx.rect(x + cellWidth - 54, y, 54, 28);
+          }
+          ctx.fillStyle = '#f59e0b';
+          ctx.fill();
+          ctx.font = 'bold 16px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('완독', x + cellWidth - 27, y + 14);
+          ctx.restore();
+        }
+      } else if (isToday) {
+        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#ffffff', '#93c5fd', 3);
+        ctx.font = 'bold 20px sans-serif';
+        ctx.fillStyle = '#3b82f6';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(dayNumber, x + 10, y + 8);
+
+        ctx.font = 'bold 18px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('TODAY', x + cellWidth / 2, y + cellHeight / 2 + 6);
+      } else {
+        drawRoundRect(x, y, cellWidth, cellHeight, 16, '#f1f5f9');
+        ctx.font = '500 20px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        ctx.fillText(dayNumber, x + 10, y + 8);
+      }
+    });
+
+    // Footer
+    const footerY = height - 140;
+    ctx.strokeStyle = '#f1f5f9';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(60, footerY);
+    ctx.lineTo(width - 60, footerY);
+    ctx.stroke();
+
+    const statsY = footerY + 35;
+
+    // Stat 1: 완독
+    ctx.textAlign = 'center';
+    ctx.font = '500 18px sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('완독', 120, statsY);
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(`${completedBooks}권`, 120, statsY + 40);
+
+    // Stat 2: 총 페이지
+    ctx.font = '500 18px sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('총 페이지', 270, statsY);
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = '#0f172a';
+    ctx.fillText(`${totalPages}p`, 270, statsY + 40);
+
+    // Stat 3: 연속
+    ctx.font = '500 18px sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('연속', 410, statsY);
+    ctx.font = 'bold 32px sans-serif';
+    ctx.fillStyle = '#2563eb';
+    ctx.fillText(`${streak}일`, 410, statsY + 40);
+
+    // Right footer brand info
+    ctx.textAlign = 'right';
+    ctx.font = '18px sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.fillText('책 읽는 습관을 시각적으로 관리하세요.', width - 60, statsY + 10);
+    ctx.font = 'bold 22px sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillText('booklog.cloudles.blog', width - 60, statsY + 42);
+
+    return canvas.toDataURL('image/png');
   };
 
   const handleDownload = async () => {
-    if (!shareRef.current || isCapturing) return;
+    if (isCapturing) return;
     try {
       setIsCapturing(true);
 
-      // Force convert all <img> elements inside container to inline base64 Data URLs
-      await ensureImagesAreDataUrls(shareRef.current);
-      await new Promise(r => setTimeout(r, 50));
+      // Render pixel-perfect PNG using native 2D Canvas (100% compatible with iOS WebKit)
+      let dataUrl = await renderShareCardToCanvas();
 
-      const dataUrl = await toPng(shareRef.current, {
-        cacheBust: false,
-        skipFonts: true,
-        pixelRatio: 2,
-        backgroundColor: '#ffffff'
-      });
+      if (!dataUrl || dataUrl === 'data:,') {
+        dataUrl = await toPng(shareRef.current, {
+          cacheBust: false,
+          skipFonts: true,
+          pixelRatio: 2,
+          backgroundColor: '#ffffff'
+        });
+      }
 
       if (!dataUrl || dataUrl === 'data:,') {
         throw new Error('이미지 변환 결과가 비어있습니다.');
@@ -204,7 +407,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         }
       }
 
-      // 2. On Mobile browsers where Web Share fails or is unsupported: Show preview overlay for long press save
+      // 2. On Mobile browsers: Show preview overlay for long press save
       if (isMobile) {
         setPreviewImage(dataUrl);
         return;
