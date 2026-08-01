@@ -144,7 +144,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">Safari 하단 공유 버튼 탭</p>
-                    <p className="text-slate-500 mt-0.5">Safari 브라우저 하단 중앙의 <Share size={14} className="inline text-primary-600 mx-0.5" /> **공유 아이콘**을 누릅니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      Safari 브라우저 하단 중앙의 <Share size={14} className="inline text-primary-600 mx-0.5" /> <strong className="text-slate-800 font-semibold">공유 아이콘</strong>을 누릅니다.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 pt-2 border-t border-slate-200/60">
@@ -153,7 +155,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">'홈 화면에 추가' 선택</p>
-                    <p className="text-slate-500 mt-0.5">공유 메뉴를 아래로 스크롤하여 <PlusSquare size={14} className="inline text-slate-700 mx-0.5" /> **'홈 화면에 추가'**를 탭합니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      공유 메뉴를 아래로 스크롤하여 <PlusSquare size={14} className="inline text-slate-700 mx-0.5" /> <strong className="text-slate-800 font-semibold">'홈 화면에 추가'</strong>를 탭합니다.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 pt-2 border-t border-slate-200/60">
@@ -162,7 +166,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">우측 상단 '추가' 버튼 클릭</p>
-                    <p className="text-slate-500 mt-0.5">오른쪽 상단의 **'추가'**를 누르면 바탕화면에 BookLog 앱이 생성됩니다!</p>
+                    <p className="text-slate-500 mt-0.5">
+                      오른쪽 상단의 <strong className="text-slate-800 font-semibold">'추가'</strong>를 누르면 바탕화면에 BookLog 앱이 생성됩니다!
+                    </p>
                   </div>
                 </div>
               </div>
@@ -185,7 +191,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">'앱 설치' 또는 '홈 화면에 추가'</p>
-                    <p className="text-slate-500 mt-0.5">메뉴 목록에서 **'앱 설치'** 또는 **'홈 화면에 추가'** 항목을 탭합니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      메뉴 목록에서 <strong className="text-slate-800 font-semibold">'앱 설치'</strong> 또는 <strong className="text-slate-800 font-semibold">'홈 화면에 추가'</strong> 항목을 탭합니다.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 pt-2 border-t border-slate-200/60">
@@ -194,7 +202,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">설치 팝업 확인</p>
-                    <p className="text-slate-500 mt-0.5">확인 팝업에서 **'설치'**를 누르면 앱처럼 단독 실행이 가능합니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      확인 팝업에서 <strong className="text-slate-800 font-semibold">'설치'</strong>를 누르면 앱처럼 단독 실행이 가능합니다.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -208,7 +218,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">주소창 우측 아이콘 클릭</p>
-                    <p className="text-slate-500 mt-0.5">Chrome/Edge 브라우저 URL 주소창 맨 우측의 **앱 설치 아이콘 [ ⊕ ]**을 클릭합니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      Chrome/Edge 브라우저 URL 주소창 맨 우측의 <strong className="text-slate-800 font-semibold">앱 설치 아이콘 [ ⊕ ]</strong>을 클릭합니다.
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3 pt-2 border-t border-slate-200/60">
@@ -217,7 +229,9 @@ const PwaInstallModal = ({ isOpen, onClose, deferredPrompt, onInstallClick }) =>
                   </div>
                   <div className="flex-1 text-xs text-slate-700">
                     <p className="font-bold text-slate-800">'설치' 선택</p>
-                    <p className="text-slate-500 mt-0.5">팝업창에서 **'설치'**를 클릭하면 데스크톱 작업표시줄 및 시작 메뉴에 등록됩니다.</p>
+                    <p className="text-slate-500 mt-0.5">
+                      팝업창에서 <strong className="text-slate-800 font-semibold">'설치'</strong>를 클릭하면 데스크톱 작업표시줄 및 시작 메뉴에 등록됩니다.
+                    </p>
                   </div>
                 </div>
               </div>
