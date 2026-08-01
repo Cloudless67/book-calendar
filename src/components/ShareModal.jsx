@@ -66,24 +66,29 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   };
 
   const handleDownload = async () => {
-    if (!shareRef.current) return;
+    if (!shareRef.current || isCapturing) return;
     try {
       setIsCapturing(true);
 
-      // Wait for all images inside shareRef to finish loading
+      // Wait for images with 2s max timeout so Promise never hangs indefinitely
       const images = shareRef.current.querySelectorAll('img');
-      await Promise.all(
-        Array.from(images).map((img) => {
-          if (img.complete) return Promise.resolve();
+      if (images.length > 0) {
+        const imagePromises = Array.from(images).map((img) => {
+          if (img.complete && img.naturalWidth > 0) return Promise.resolve();
           return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve;
+            const onDone = () => resolve();
+            img.addEventListener('load', onDone, { once: true });
+            img.addEventListener('error', onDone, { once: true });
           });
-        })
-      );
+        });
+
+        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2000));
+        await Promise.race([Promise.all(imagePromises), timeoutPromise]);
+      }
 
       const dataUrl = await toPng(shareRef.current, {
         cacheBust: false,
+        skipFonts: true,
         pixelRatio: 2,
         backgroundColor: '#ffffff'
       });
@@ -91,10 +96,12 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       const link = document.createElement('a');
       link.download = `booklog-${currentDate.format('YYYY-MM')}.png`;
       link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to generate image', error);
-      alert('이미지 생성에 실패했습니다.');
+      alert('이미지 생성에 실패했습니다: ' + (error.message || error));
     } finally {
       setIsCapturing(false);
     }
@@ -170,6 +177,9 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                           alt="" 
                           crossOrigin="anonymous"
                           className="w-full h-full object-cover rounded-xl"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                          }}
                         />
                         <span className="absolute top-1 left-1.5 text-[9px] md:text-[10px] font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)] z-20">
                           {dayNumber}
