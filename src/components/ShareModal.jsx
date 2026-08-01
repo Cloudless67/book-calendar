@@ -7,6 +7,7 @@ import dayjs from 'dayjs';
 const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
   const shareRef = useRef(null);
   const [isCapturing, setIsCapturing] = useState(false);
+  const [coverDataUrls, setCoverDataUrls] = useState({});
 
   useEffect(() => {
     if (isOpen) {
@@ -18,6 +19,53 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
       document.body.style.overflow = '';
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+
+    const currentMonthReadings = readings.filter(r => dayjs(r.date).isSame(currentDate, 'month'));
+    const urls = Array.from(new Set(currentMonthReadings.map(r => r.coverUrl).filter(Boolean)));
+
+    const convertAll = async () => {
+      const map = {};
+      await Promise.all(
+        urls.map(async (url) => {
+          if (url.startsWith('data:')) {
+            map[url] = url;
+            return;
+          }
+          try {
+            const proxyUrl = url.includes('supabase.co')
+              ? url
+              : `${window.location.origin}/api/image-proxy?url=${encodeURIComponent(url)}`;
+            const res = await fetch(proxyUrl);
+            if (!res.ok) return;
+            const blob = await res.blob();
+            const dataUrl = await new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = () => resolve('');
+              reader.readAsDataURL(blob);
+            });
+            if (dataUrl) map[url] = dataUrl;
+          } catch (e) {
+            console.warn('Failed to pre-convert image:', e);
+          }
+        })
+      );
+
+      if (isMounted) {
+        setCoverDataUrls(map);
+      }
+    };
+
+    convertAll();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, currentDate, readings]);
 
   if (!isOpen) return null;
 
@@ -92,16 +140,41 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
         pixelRatio: 2,
         backgroundColor: '#ffffff'
       });
-      
+
+      if (!dataUrl || dataUrl === 'data:,') {
+        throw new Error('이미지 변환 결과가 비어있습니다.');
+      }
+
+      const fileName = `booklog-${currentDate.format('YYYY-MM')}.png`;
+
+      // Check for Web Share API (especially for Mobile devices)
+      if (navigator.canShare && navigator.share) {
+        try {
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          const file = new File([blob], fileName, { type: 'image/png' });
+          if (navigator.canShare({ files: [file] })) {
+            await navigator.share({
+              files: [file],
+              title: 'BookLog 독서 캘린더',
+            });
+            return;
+          }
+        } catch (shareErr) {
+          if (shareErr.name === 'AbortError') return;
+        }
+      }
+
+      // Standard desktop download
       const link = document.createElement('a');
-      link.download = `booklog-${currentDate.format('YYYY-MM')}.png`;
+      link.download = fileName;
       link.href = dataUrl;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
       console.error('Failed to generate image', error);
-      alert('이미지 생성에 실패했습니다: ' + (error.message || error));
+      alert('이미지 저장 중 오류가 발생했습니다: ' + (error.message || error));
     } finally {
       setIsCapturing(false);
     }
@@ -165,7 +238,7 @@ const ShareModal = ({ isOpen, onClose, currentDate, readings, stats }) => {
                   }
 
                   if (coverUrl) {
-                    const imgSrc = getImageSrc(coverUrl);
+                    const imgSrc = coverDataUrls[coverUrl] || getImageSrc(coverUrl);
                     return (
                       <div 
                         key={i} 
