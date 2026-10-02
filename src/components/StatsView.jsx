@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import dayjs from 'dayjs';
 import { useAtomValue } from 'jotai';
 import { statsAtom, readingsAtom, booksAtom } from '../store';
@@ -7,7 +7,15 @@ import { TrendingUp, Award, Target, Flame } from 'lucide-react';
 
 const COLORS = ['#6366F1', '#818CF8', '#A5B4FC', '#C7D2FE', '#E0E7FF'];
 
+const getPagesRead = (r) => {
+  const delta = (r.endPage !== undefined && r.startPage !== undefined)
+                ? (parseInt(r.endPage) || 0) - (parseInt(r.startPage) || 0)
+                : (parseInt(r.pagesRead) || 0);
+  return Math.max(0, delta);
+};
+
 const StatsView = () => {
+  const [period, setPeriod] = useState('month'); // 'month' | 'year'
   const stats = useAtomValue(statsAtom);
   const readings = useAtomValue(readingsAtom);
   const books = useAtomValue(booksAtom);
@@ -43,9 +51,14 @@ const StatsView = () => {
 
   const summary = getSummaryMessage(stats);
 
-  // 차트를 위한 최근 6개월 월별 데이터 생성 로직
-  const monthlyData = Array.from({ length: 6 }).map((_, i) => {
-    const monthObj = dayjs().subtract(5 - i, 'month');
+  const isYear = period === 'year';
+  const thisYear = dayjs().year();
+
+  // 차트 데이터: 월간은 최근 6개월, 연간은 올해 1~12월
+  const monthlyData = Array.from({ length: isYear ? 12 : 6 }).map((_, i) => {
+    const monthObj = isYear
+      ? dayjs().month(i)
+      : dayjs().subtract(5 - i, 'month');
     const monthLabel = monthObj.format('M월');
     
     const monthReadings = readings.filter(r => {
@@ -54,13 +67,7 @@ const StatsView = () => {
     });
 
     const booksRead = monthReadings.filter(r => r.status === 'completed').length;
-    
-    const pagesRead = monthReadings.reduce((acc, curr) => {
-      const delta = (curr.endPage !== undefined && curr.startPage !== undefined) 
-                    ? (parseInt(curr.endPage) || 0) - (parseInt(curr.startPage) || 0)
-                    : (parseInt(curr.pagesRead) || 0);
-      return acc + Math.max(0, delta);
-    }, 0);
+    const pagesRead = monthReadings.reduce((acc, curr) => acc + getPagesRead(curr), 0);
 
     return {
       name: monthLabel,
@@ -69,13 +76,21 @@ const StatsView = () => {
     };
   });
 
+  // 요약 패널 수치 (연간이면 올해 합계)
+  const periodBooks = isYear
+    ? readings.filter(r => r.status === 'completed' && dayjs(r.date).year() === thisYear).length
+    : stats.booksReadThisMonth;
+  const periodPages = isYear
+    ? readings.filter(r => dayjs(r.date).year() === thisYear).reduce((acc, curr) => acc + getPagesRead(curr), 0)
+    : (stats.pagesReadThisMonth || 0);
+
   // 취향 장르 분포 동적 계산 (완독된 책 기준)
   const calculateGenreData = () => {
     const completedBooksGenreMap = {};
     
     // 완독(completed)된 책의 장르만 수집
     readings.forEach(r => {
-      if (r.status === 'completed') {
+      if (r.status === 'completed' && (!isYear || dayjs(r.date).year() === thisYear)) {
          // booksAtom에서 해당 책 정보 찾기 (우선 isbn으로, 없으면 title로 검색)
          let bookObj = null;
          if (r.isbn) {
@@ -117,6 +132,17 @@ const StatsView = () => {
           <p className="text-sm font-medium text-primary-600 mb-1">나의 독서 패턴 분석</p>
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800">통계 인사이트</h1>
         </div>
+        <div className="flex bg-slate-100 rounded-xl p-1 text-sm font-medium">
+          {[['month', '월간'], ['year', '연간']].map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setPeriod(key)}
+              className={`px-4 py-1.5 rounded-lg transition-colors ${period === key ? 'bg-white text-primary-600 shadow-sm' : 'text-slate-500'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </header>
 
       {/* 요약 강조 패널 */}
@@ -128,13 +154,13 @@ const StatsView = () => {
             <p className="text-2xl md:text-3xl font-bold mb-4" dangerouslySetInnerHTML={{ __html: summary.message.replace('! ', '!<br className="hidden md:block"/>') }}></p>
             <div className="flex gap-4 items-center">
               <div>
-                <p className="text-primary-200 text-xs">이번 달 완독</p>
-                <p className="text-2xl font-bold">{stats.booksReadThisMonth}권</p>
+                <p className="text-primary-200 text-xs">{isYear ? '올해 완독' : '이번 달 완독'}</p>
+                <p className="text-2xl font-bold">{periodBooks}권</p>
               </div>
               <div className="w-px h-8 bg-primary-500/50"></div>
               <div>
-                <p className="text-primary-200 text-xs">이번 달 읽은 페이지</p>
-                <p className="text-2xl font-bold">{stats.pagesReadThisMonth || 0}p</p>
+                <p className="text-primary-200 text-xs">{isYear ? '올해 읽은 페이지' : '이번 달 읽은 페이지'}</p>
+                <p className="text-2xl font-bold">{periodPages}p</p>
               </div>
             </div>
           </div>
@@ -157,7 +183,7 @@ const StatsView = () => {
         {/* 장르 분포 파이 차트 */}
         <div className="glass-card p-6 rounded-3xl">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Target size={18} className="text-primary-500"/> 내 취향 장르 분포
+            <Target size={18} className="text-primary-500"/> {isYear ? '올해 취향 장르 분포' : '내 취향 장르 분포'}
           </h3>
           <div className="h-64">
             {dynamicGenreData.length > 0 ? (
@@ -201,7 +227,7 @@ const StatsView = () => {
         {/* 월별 독서량 바 차트 */}
         <div className="glass-card p-6 rounded-3xl">
           <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <TrendingUp size={18} className="text-primary-500"/> 월별 완독 권수 추이
+            <TrendingUp size={18} className="text-primary-500"/> {isYear ? `${thisYear}년 월별 완독 권수` : '월별 완독 권수 추이'}
           </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -213,7 +239,7 @@ const StatsView = () => {
                    cursor={{ fill: '#f1f5f9' }}
                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
                 />
-                <Bar dataKey="읽은책" fill="#6366F1" radius={[6, 6, 0, 0]} barSize={40} />
+                <Bar dataKey="읽은책" fill="#6366F1" radius={[6, 6, 0, 0]} barSize={isYear ? 20 : 40} />
               </BarChart>
             </ResponsiveContainer>
           </div>
