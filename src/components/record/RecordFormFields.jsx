@@ -36,9 +36,9 @@ const RecordFormFields = ({
                     setEndPage(String(totalPages));
                     setStatus('completed');
                   }}
-                  className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-emerald-500 bg-white text-emerald-600 text-xs font-semibold shadow-sm hover:bg-emerald-500 hover:text-white active:scale-95 transition-all cursor-pointer"
                 >
-                  완독
+                  <CheckCircle2 size={13} /> 완독
                 </button>
               </span>
             )}
