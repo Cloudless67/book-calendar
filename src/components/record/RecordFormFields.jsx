@@ -27,7 +27,20 @@ const RecordFormFields = ({
               <Book size={16} className="text-slate-400" /> 페이지 기록
             </span>
             {totalPages > 0 && (
-              <span className="text-xs font-normal text-slate-400">전체 {totalPages}쪽</span>
+              <span className="flex items-center gap-2">
+                <span className="text-xs font-normal text-slate-400">전체 {totalPages}쪽</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartPage('0');
+                    setEndPage(String(totalPages));
+                    setStatus('completed');
+                  }}
+                  className="px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                >
+                  완독
+                </button>
+              </span>
             )}
           </label>
           <div className="flex items-center gap-2">
